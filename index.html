@@ -915,6 +915,20 @@
         font-size: 1.2rem;
       }
 
+      .mctl {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      .mctl .ctrl-btn {
+        padding: 10px 14px;
+        font-size: 0.9rem;
+      }
+      .mctl .ctrl-btn span:not(.ic) {
+        display: inline !important;
+      }
+
       /* Responsive Media Queries */
       #uz {
         display: flex;
@@ -960,8 +974,8 @@
         font: 700 max(1.5cqw, 13px) var(--serif);
         padding: 0.8em 1.8em;
         border-radius: 14px;
-        border: 1px solid var(--line);
-        background: rgba(14, 42, 32, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        background: rgba(10, 10, 10, 0.92);
         box-shadow: 0 8px 22px rgba(0, 0, 0, 0.6);
       }
       #rs:hover,
@@ -1010,6 +1024,68 @@
           padding: 6px 4px;
         }
       }
+      #gov {
+        z-index: 150;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+      }
+      #gov .card {
+        gap: 12px;
+      }
+      #govt {
+        font-size: 1.8rem;
+        border: 0;
+        padding: 0;
+      }
+      @media (max-width: 768px) {
+        body {
+          padding: 6px;
+        }
+        .ctrl-btn {
+          padding: 10px 12px;
+        }
+        .ctrl-btn span:not(.ic) {
+          display: none;
+        }
+        .tc {
+          padding: 6px 12px;
+          font-size: 0.85rem;
+        }
+        #ms {
+          font-size: 1rem;
+        }
+        #board-container {
+          gap: 8px;
+        }
+        .card {
+          padding: 16px;
+        }
+      }
+      @media (max-height: 550px) {
+        .ctrl-btn {
+          padding: 10px;
+        }
+        .ctrl-btn span:not(.ic) {
+          display: none;
+        }
+        #board-container,
+        #st {
+          gap: 4px;
+        }
+        #tm {
+          gap: 8px;
+        }
+        #ms {
+          font-size: 0.95rem;
+        }
+        .modal .card {
+          padding: 14px;
+          gap: 8px;
+        }
+        #govt {
+          font-size: 1.3rem;
+        }
+      }
     </style>
   </head>
   <body>
@@ -1029,11 +1105,22 @@
           <small>On the same device, taking turns</small>
         </button>
         <button onclick="lobby()">
-          <b>LAN Lobby</b>
-          <small>Play from another device</small>
+          <b>Play Online</b>
+          <small>Play against another person over the internet</small>
         </button>
       </nav>
       <button class="gh" onclick="show('op')">⚙ Options</button>
+      <div class="mctl">
+        <button class="ctrl-btn snb" onclick="mute()" title="Game Sounds">
+          <span class="ic">🔊</span><span>Sound</span>
+        </button>
+        <button class="ctrl-btn mub" onclick="mmute()" title="Music">
+          <span class="ic">🎵</span><span>Music</span>
+        </button>
+        <button class="ctrl-btn fsb" onclick="fs()" title="Fullscreen">
+          <span class="ic">⛶</span><span class="fsbt">Fullscreen</span>
+        </button>
+      </div>
     </div>
 
     <!-- AI Difficulty Panel -->
@@ -1081,19 +1168,6 @@
         </div>
         <p id="cmh" class="hint"></p>
       </div>
-      <div class="card">
-        <h3>Rules</h3>
-        <div class="tg">
-          <span>Cover hitting checker in home with rematch rule</span>
-          <button id="hcb" onclick="hcset(hcOpt ? 0 : 1)"></button>
-        </div>
-        <p class="hint">
-          Enabled: After hitting a checker in home (house), the striking checker
-          cannot cover another checker on the same turn; however, moving to an
-          empty point is allowed. Disabled: Standard rule. In the online lobby,
-          the table creator's rule applies.
-        </p>
-      </div>
       <button class="gh" onclick="menu()">← Back</button>
     </div>
 
@@ -1120,6 +1194,16 @@
       </div>
     </div>
 
+    <!-- Game result popup -->
+    <div id="gov" class="modal" hidden>
+      <div class="card">
+        <h3 id="govt"></h3>
+        <p id="govm"></p>
+        <button class="pr" id="govr" onclick="again()">Play Again</button>
+        <button onclick="menu()">Menu</button>
+      </div>
+    </div>
+
     <!-- Game View -->
     <div id="g" hidden>
       <div id="board-container">
@@ -1137,9 +1221,6 @@
               </span>
               <button id="rl" onclick="roll()">Roll</button>
               <button id="cf" class="pr" onclick="ok()">Confirm</button>
-              <button id="rs" class="pr" onclick="again()" hidden>
-                Play Again
-              </button>
             </div>
           </div>
           <div id="pips">
@@ -1171,14 +1252,14 @@
 
       <!-- Side Controls -->
       <div id="ctrl-panel">
-        <button class="ctrl-btn" onclick="mute()" id="snb" title="Game Sounds">
-          <span class="ic">🔊</span><span id="snbt">Sound</span>
+        <button class="ctrl-btn snb" onclick="mute()" title="Game Sounds">
+          <span class="ic">🔊</span><span>Sound</span>
         </button>
-        <button class="ctrl-btn" onclick="mmute()" id="mub" title="Music">
+        <button class="ctrl-btn mub" onclick="mmute()" title="Music">
           <span class="ic">🎵</span><span>Music</span>
         </button>
-        <button class="ctrl-btn" onclick="fs()" id="fsb" title="Fullscreen">
-          <span class="ic">⛶</span><span id="fsbt">Fullscreen</span>
+        <button class="ctrl-btn fsb" onclick="fs()" title="Fullscreen">
+          <span class="ic">⛶</span><span class="fsbt">Fullscreen</span>
         </button>
         <button class="ctrl-btn" onclick="tryMenu()" title="Menu">
           <span class="ic">☰</span><span>Menu</span>
@@ -1187,6 +1268,11 @@
     </div>
 
     <script>
+      // სერვერის მისამართი (render.com). CrazyGames-ზე თამაში ამ სერვერს უკავშირდება.
+      const SRV =
+        /onrender\.com$|^localhost$|^\d+\.\d+\.\d+\.\d+$/.test(location.hostname)
+          ? ""
+          : "https://backgammon-game-x434.onrender.com";
       const A = (p, r) => (p ? 23 - r : r),
         $ = (s) => document.querySelector(s),
         P = ["", "4", "08", "048", "0268", "04268", "023568"];
@@ -1201,8 +1287,6 @@
         hcOpt = 0;
       try {
         cm = +localStorage.getItem("nardCm") || 0;
-        const v = localStorage.getItem("nardHc2");
-        if (v !== null) hcOpt = +v;
       } catch (e) {}
       const TD = 10,
         TR = 60;
@@ -1215,6 +1299,8 @@
         music(id == "g" ? "g" : "m");
       };
       const menu = () => {
+        $("#gov").hidden = 1;
+        es && api({ t: "leave" });
         es && es.close();
         es = 0;
         G && (G.over = 1);
@@ -1275,12 +1361,14 @@
       addEventListener("keydown", kick);
       const mute = () => {
         muted = !muted;
-        $("#snb").querySelector(".ic").textContent = muted ? "🔇" : "🔊";
-        $("#snb").classList.toggle("off", !!muted);
+        document.querySelectorAll(".snb").forEach((b) => {
+          b.querySelector(".ic").textContent = muted ? "🔇" : "🔊";
+          b.classList.toggle("off", !!muted);
+        });
       };
       const mmute = () => {
         mmuted = !mmuted;
-        $("#mub").classList.toggle("off", !!mmuted);
+        document.querySelectorAll(".mub").forEach((b) => b.classList.toggle("off", !!mmuted));
         mmuted ? Object.values(MU).forEach((a) => a.pause()) : music(curMu);
       };
       function snd(k) {
@@ -1597,6 +1685,7 @@
         G.ty.filter((t) => t == "h").length == 1 ? G.ty.indexOf("h") : -1;
       function fin(w, why) {
         G.over = 1;
+        G.win = w;
         G.legal = [];
         G.rem = [];
         sel = null;
@@ -1641,12 +1730,8 @@
           } else G.tm[p] -= dt;
           if (G.tm[p] <= 0) {
             G.tm[p] = 0;
-            if (G.ty[p] == "h") {
-              if (G.on) net({ t: "to" });
-              return timeout(p);
-            }
-            G.ng = G.ng || now;
-            if (now - G.ng > 5000) return timeout(p);
+            if (G.on) return tshow(); // online: the server declares the timeout
+            if (G.ty[p] == "h") return timeout(p);
           }
         }
         tshow();
@@ -1733,9 +1818,19 @@
       function roll(d) {
         const p = G.turn;
         if (G.dice.length || G.over || G.skip) return;
+        if (G.on && !d) {
+          // online: the server rolls the dice and sends them to both players
+          if (G.ty[p] == "h" && !G.wait) {
+            const g = G;
+            g.wait = 1;
+            setTimeout(() => (g.wait = 0), 3000);
+            net({ t: "r" });
+          }
+          return;
+        }
+        G.wait = 0;
         const op = G.open;
         d = d || (op ? [rnd()] : [rnd(), rnd()]);
-        if (G.on && G.ty[p] == "h") net({ t: "r", d });
         G.dice = d;
         if (!op) G.go = 1;
         snd("d");
@@ -1901,16 +1996,6 @@
         ][v];
       }
       cmode(cm);
-      function hcset(v) {
-        hcOpt = v;
-        try {
-          localStorage.setItem("nardHc2", v);
-        } catch (e) {}
-        const b = $("#hcb");
-        b.textContent = v ? "Enabled" : "Disabled";
-        b.classList.toggle("pr", !!v);
-      }
-      hcset(hcOpt);
       music("m");
       $("#bd").onpointerdown = (e) => {
         const el = e.target.closest(".p,.bz,.tr");
@@ -2008,7 +2093,7 @@
       function again() {
         if (!G || !G.over) return;
         if (!G.on) return rematch();
-        if (G.ask) return;
+        if (G.ask || G.left) return;
         G.ask = 1;
         net({ t: "rq" });
         draw();
@@ -2108,9 +2193,19 @@
         $("#dc").hidden = !!cf || !!G.over;
         $("#gv").hidden = !!G.over;
         const rs = $("#rs");
-        rs.hidden = !G.over;
-        rs.disabled = !!G.ask;
-        rs.textContent = G.ask ? "Waiting for response..." : "Play Again";
+        const txt = G.ask ? "Waiting for response..." : "Play Again",
+          h0 = me();
+        $("#gov").hidden = !(G.over && G.win != null);
+        $("#govr").hidden = !!G.left;
+        $("#govr").disabled = !!G.ask;
+        $("#govr").textContent = txt;
+        $("#govt").textContent =
+          h0 < 0
+            ? ["White", "Black"][G.win] + " wins!"
+            : G.win == h0
+              ? "🏆 You Win!"
+              : "😞 You Lose";
+        $("#govm").textContent = G.msg;
         const pc = (i) => {
           let s = G.S.bar[i] * 25;
           for (let r = 0; r < 24; r++) s += G.S.c[i][A(i, r)] * (24 - r);
@@ -2127,48 +2222,79 @@
         tshow();
       }
       async function fs() {
+        const d = document,
+          e = d.documentElement,
+          rq = e.requestFullscreen || e.webkitRequestFullscreen,
+          ex = d.exitFullscreen || d.webkitExitFullscreen;
         try {
-          if (document.fullscreenElement) {
-            await document.exitFullscreen();
-          } else {
-            await document.documentElement.requestFullscreen();
-            await screen.orientation.lock("landscape");
+          if (d.fullscreenElement || d.webkitFullscreenElement) {
+            await ex.call(d);
+            return;
           }
+          if (rq) await rq.call(e);
         } catch (x) {}
+        try {
+          await screen.orientation.lock("landscape");
+        } catch (x) {
+          try {
+            await screen.orientation.lock("landscape-primary");
+          } catch (y) {}
+        }
       }
-      document.onfullscreenchange = () => {
-        const isFs = !!document.fullscreenElement;
-        $("#fsbt").textContent = isFs ? "Exit Fullscreen" : "Fullscreen";
+      document.onfullscreenchange = document.onwebkitfullscreenchange = () => {
+        const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+        document.querySelectorAll(".fsbt").forEach((e) => (e.textContent = isFs ? "Exit Fullscreen" : "Fullscreen"));
         if (!isFs && screen.orientation && screen.orientation.unlock) {
           screen.orientation.unlock();
         }
       };
+      if (!document.documentElement.requestFullscreen && !document.documentElement.webkitRequestFullscreen)
+        document.querySelectorAll(".fsb").forEach((b) => (b.style.display = "none"));
       const api = (o) =>
-        fetch("/api", {
+        fetch(SRV + "/api", {
           method: "POST",
           body: JSON.stringify({ ...o, id: myId }),
         }).catch(() => {});
-      const net = (m) => api({ t: "relay", m });
+      const net = (m) => api(m);
+      addEventListener("pagehide", () => {
+        if (es && myId)
+          try {
+            navigator.sendBeacon(
+              SRV + "/api",
+              JSON.stringify({ t: "leave", id: myId }),
+            );
+          } catch (e) {}
+      });
       function mk() {
         api({
           t: "create",
           name: $("#nm").value.trim() || "Table",
-          hc: hcOpt,
         });
       }
       function lobby() {
         show("lb");
-        $("#lr").textContent =
-          "Cover rule (from options): " + (hcOpt ? "Enabled" : "Disabled");
         if (es) return;
-        es = new EventSource("/ev");
+        try {
+          myId = sessionStorage.nardTok;
+        } catch (e) {}
+        if (!myId) {
+          myId = Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) =>
+            b.toString(16).padStart(2, "0"),
+          ).join("");
+          try {
+            sessionStorage.nardTok = myId;
+          } catch (e) {}
+        }
+        es = new EventSource(SRV + "/ev?tok=" + myId);
         es.onerror = () => {
-          $("#tl").innerHTML =
-            "<p>Server not found. Run: node server.js and open its address</p>";
+          $("#tl").innerHTML = "<p>Connecting to the server...</p>";
         };
         es.onmessage = (e) => {
           const m = JSON.parse(e.data);
-          if (m.t == "hi") myId = m.id;
+          if (m.t == "hi" && !m.ing && G && G.on && !G.over) {
+            G.left = 1;
+            fin(G.ty.indexOf("net"), "📡 Connection lost. ");
+          }
           if (m.t == "made")
             $("#lm").textContent = "Table created, waiting for opponent...";
           if (m.t == "tables")
@@ -2176,7 +2302,7 @@
               ? m.l
                   .map(
                     (t) =>
-                      `<div class="tb"><span>${t.name.replace(/[<>&"'`]/g, "")}<br><small style="opacity:.65">Cover rule: ${t.hc ? "Enabled" : "Disabled"}</small></span><button class="pr" onclick="api({t:'join',tid:${t.id}})">Join</button></div>`,
+                      `<div class="tb"><span>${t.name.replace(/[<>&"'`]/g, "")}</span><button class="pr" onclick="api({t:'join',tid:${t.id}})">Join</button></div>`,
                   )
                   .join("")
               : "<p>No open tables available</p>";
@@ -2191,12 +2317,26 @@
                   ")",
               ),
               m.seat,
-              { on: 1, hc: m.hc ? 1 : 0 },
+              {
+                on: 1,
+                hc: 0,
+                ...(m.st && {
+                  S: m.st.S,
+                  turn: m.st.turn,
+                  tm: m.st.tm,
+                  ...(!m.st.op && { open: 0, od: 0, go: 1 }),
+                }),
+              },
             );
+          // reconnect: restore the rolled dice of the current turn
+          if (m.t == "go" && m.st && !m.st.op && m.st.dice.length) {
+            G.dice = m.st.dice;
+            after(m.st.dice, m.st.turn);
+          }
           if (
             G &&
             G.on &&
-            ["r", "m", "u", "c", "to", "sf", "rq", "ra", "rn"].includes(m.t)
+            ["r", "m", "u", "c", "to", "dc", "sf", "rq", "ra", "rn"].includes(m.t)
           ) {
             const w = Math.max(Date.now(), nx);
             nx = w + (m.t == "r" ? 420 : m.t == "m" ? 320 : 0);
@@ -2205,7 +2345,17 @@
               if (m.t == "m") mv(m.r, m.d, 0, m.c);
               if (m.t == "u") undo();
               if (m.t == "c") end();
-              if (m.t == "to") timeout(G.ty.indexOf("net"));
+              if (m.t == "to") timeout(m.p);
+              if (m.t == "dc" && !G.over) {
+                G.left = 1;
+                fin(
+                  1 - G.ty.indexOf("net"),
+                  m.why == "left"
+                    ? "Opponent left the game. "
+                    : "📡 Opponent disconnected. ",
+                );
+                draw();
+              }
               if (m.t == "sf" && !G.over) {
                 fin(1 - G.ty.indexOf("net"), "🏳 Opponent surrendered. ");
                 draw();
@@ -2224,9 +2374,11 @@
               }
             }, w - Date.now());
           }
-          if (m.t == "left") {
-            alert("Opponent left");
-            menu();
+          if (m.t == "left" && G && G.on) {
+            G.left = 1;
+            G.ask = 0;
+            G.msg = "Opponent left";
+            draw();
           }
         };
       }
