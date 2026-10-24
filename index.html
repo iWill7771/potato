@@ -2218,6 +2218,15 @@
           body: JSON.stringify({ ...o, id: myId }),
         }).catch(() => {});
       const net = (m) => api(m);
+      addEventListener("pagehide", () => {
+        if (es && myId)
+          try {
+            navigator.sendBeacon(
+              "/api",
+              JSON.stringify({ t: "leave", id: myId }),
+            );
+          } catch (e) {}
+      });
       function mk() {
         api({
           t: "create",
@@ -2245,8 +2254,7 @@
         es.onmessage = (e) => {
           const m = JSON.parse(e.data);
           if (m.t == "hi" && !m.ing && G && G.on && !G.over) {
-            alert("Connection to the game was lost");
-            menu();
+            fin(G.ty.indexOf("net"), "📡 Connection lost. ");
           }
           if (m.t == "made")
             $("#lm").textContent = "Table created, waiting for opponent...";
