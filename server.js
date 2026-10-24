@@ -108,7 +108,7 @@ const both = (t, m) => {
 const bc = () => {
   const l = Object.values(T)
     .filter((t) => !t.g && !t.priv)
-    .map((t) => ({ id: t.id, name: t.name }));
+    .map((t) => ({ id: t.id, name: t.name, lock: t.pw ? 1 : 0 }));
   for (const k in P) send(k, { t: "tables", l });
 };
 function removeTable(t) {
@@ -240,7 +240,7 @@ function handle(tok, m) {
     if (t) leaveTable(tok);
     const name =
       String(m.name || "").replace(/[<>&"'`]/g, "").slice(0, 20) || "Table";
-    T[++tid] = { id: tid, name, h: tok, g: null, G: null, priv: m.priv ? 1 : 0, hn: clean(m.un), gn: "" };
+    T[++tid] = { id: tid, name, h: tok, g: null, G: null, priv: m.priv ? 1 : 0, hn: clean(m.un), gn: "", pw: String(m.pw || "").slice(0, 12) };
     p.tid = tid;
     send(tok, { t: "made", tid });
     return bc();
@@ -249,6 +249,7 @@ function handle(tok, m) {
     const jt = T[m.tid];
     if (!jt || jt.g) return send(tok, { t: "nojoin" });
     if (jt.h == tok) return;
+    if (jt.pw && String(m.pw || "") !== jt.pw) return send(tok, { t: "badpw" });
     if (t) leaveTable(tok);
     jt.g = tok;
     jt.gn = clean(m.un);

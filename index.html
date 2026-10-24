@@ -1144,8 +1144,9 @@
         <h3>New Table</h3>
         <div class="row">
           <input id="nm" placeholder="Table name" maxlength="20" />
-          <button class="pr" onclick="mk()">Create</button>
+          <input id="pw" placeholder="Password (optional)" maxlength="12" />
         </div>
+        <button class="pr" onclick="mk()">Create</button>
         <p id="lr" class="hint"></p>
         <p id="lm"></p>
         <button id="inv" class="pr" onclick="copyInvite()" hidden>Copy invite link</button>
@@ -2282,9 +2283,11 @@
           } catch (e) {}
       });
       function mk() {
+        myPw = ($("#pw").value || "").trim();
         api({
           t: "create",
           name: $("#nm").value.trim() || cgName || "Table",
+          pw: ($("#pw").value || "").trim(),
         });
       }
       function lobby() {
@@ -2309,13 +2312,14 @@
           const m = JSON.parse(e.data);
           if (m.t == "hi") {
             if (want) {
-              api({ t: "join", tid: want });
+              api({ t: "join", tid: want, pw: wantPw });
               want = 0;
             } else if (inst) {
               api({ t: "create", name: cgName || "Table", priv: 1 });
               inst = 0;
             }
           }
+          if (m.t == "badpw") $("#lm").textContent = "Wrong password";
           if (m.t == "nojoin")
             $("#lm").textContent = "That table is no longer available";
           if (m.t == "hi" && !m.ing && G && G.on && !G.over) {
@@ -2333,7 +2337,7 @@
               ? m.l
                   .map(
                     (t) =>
-                      `<div class="tb"><span>${t.name.replace(/[<>&"'`]/g, "")}</span><button class="pr" onclick="api({t:'join',tid:${t.id}})">Join</button></div>`,
+                      `<div class="tb"><span>${t.lock ? "🔒 " : ""}${t.name.replace(/[<>&"'`]/g, "")}</span><button class="pr" onclick="joinT(${t.id},${t.lock ? 1 : 0})">Join</button></div>`,
                   )
                   .join("")
               : "<p>No open tables available</p>";
@@ -2427,6 +2431,9 @@
         want = 0,
         inst = 0,
         myTid = 0,
+        myPw = "",
+        wantPw = "",
+        urlJoin = 0,
         cgName = "";
       const cgOn = () => !!CG;
       let cgPlaying = 0;
@@ -2437,12 +2444,21 @@
           on ? CG.game.gameplayStart() : CG.game.gameplayStop();
         } catch (e) {}
       }
+      const invParams = () => (myPw ? { tid: String(myTid), pw: myPw } : { tid: String(myTid) });
+      function joinT(tid, lock) {
+        let pw = "";
+        if (lock) {
+          pw = prompt("Table password:") || "";
+          if (!pw) return;
+        }
+        api({ t: "join", tid, pw });
+      }
       function cgRoom(open) {
         if (!cgOn() || !myTid) return;
         try {
           CG.game.updateRoom(
             open
-              ? { roomId: "bg" + myTid, isJoinable: true, inviteParams: { tid: String(myTid) } }
+              ? { roomId: "bg" + myTid, isJoinable: true, inviteParams: invParams() }
               : { roomId: "bg" + myTid, isJoinable: false },
           );
         } catch (e) {}
@@ -2457,10 +2473,10 @@
       }
       function copyInvite() {
         if (!myTid) return;
-        let link = location.origin + location.pathname + "?tid=" + myTid;
+        let link = location.origin + location.pathname + "?tid=" + myTid + (myPw ? "&pw=" + encodeURIComponent(myPw) : "");
         if (cgOn())
           try {
-            link = CG.game.inviteLink({ tid: String(myTid) }) || link;
+            link = CG.game.inviteLink(invParams()) || link;
           } catch (e) {}
         if (!link) return;
         const ok = () => ($("#lm").textContent = "Invite link copied! Send it to your friend.");
@@ -2468,25 +2484,33 @@
           ? navigator.clipboard.writeText(link).then(ok, () => prompt("Copy this link:", link))
           : prompt("Copy this link:", link);
       }
-      const urlInvite = () => {
-        const q = new URLSearchParams(location.search).get("tid");
-        q && joinInvite({ tid: q });
-      };
       function joinInvite(p) {
         const tid = p && +p.tid;
         if (!tid) return;
         want = tid;
+        wantPw = p.pw || "";
         if (es) {
           show("lb");
-          api({ t: "join", tid });
+          $("#lm").textContent = "Joining table...";
+          api({ t: "join", tid, pw: wantPw });
           want = 0;
-        } else lobby();
+        } else {
+          lobby();
+          $("#lm").textContent = "Joining table...";
+        }
+      }
+      {
+        const q = new URLSearchParams(location.search);
+        if (q.get("tid")) {
+          urlJoin = 1;
+          joinInvite({ tid: q.get("tid"), pw: q.get("pw") || "" });
+        }
       }
       (async function cgInit() {
         try {
           await window.CrazyGames.SDK.init();
           const S = window.CrazyGames.SDK;
-          if (S.environment == "disabled") return urlInvite();
+          if (S.environment == "disabled") return;
           CG = S;
           try {
             CG.game.loadingStart();
@@ -2509,14 +2533,12 @@
           CG.game.addSettingsChangeListener(am);
           CG.game.addJoinRoomListener(joinInvite);
           const ip = CG.game.inviteParams;
-          if (ip && ip.tid) joinInvite(ip);
-          else if (CG.game.isInstantMultiplayer) {
+          if (ip && ip.tid) urlJoin || joinInvite(ip);
+          else if (CG.game.isInstantMultiplayer && !urlJoin) {
             inst = 1;
             lobby();
           }
-        } catch (e) {
-          CG || urlInvite();
-        }
+        } catch (e) {}
       })();
     </script>
   </body>
