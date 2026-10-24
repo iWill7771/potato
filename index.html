@@ -2325,7 +2325,7 @@
           if (m.t == "made") {
             $("#lm").textContent = "Table created, waiting for opponent...";
             myTid = m.tid;
-            $("#inv").hidden = !(cgOn() && myTid);
+            $("#inv").hidden = !myTid;
             cgRoom(1);
           }
           if (m.t == "tables")
@@ -2456,17 +2456,22 @@
           } catch (e) {}
       }
       function copyInvite() {
-        if (!cgOn() || !myTid) return;
-        let link = "";
-        try {
-          link = CG.game.inviteLink({ tid: String(myTid) });
-        } catch (e) {}
+        if (!myTid) return;
+        let link = location.origin + location.pathname + "?tid=" + myTid;
+        if (cgOn())
+          try {
+            link = CG.game.inviteLink({ tid: String(myTid) }) || link;
+          } catch (e) {}
         if (!link) return;
         const ok = () => ($("#lm").textContent = "Invite link copied! Send it to your friend.");
         navigator.clipboard
           ? navigator.clipboard.writeText(link).then(ok, () => prompt("Copy this link:", link))
           : prompt("Copy this link:", link);
       }
+      const urlInvite = () => {
+        const q = new URLSearchParams(location.search).get("tid");
+        q && joinInvite({ tid: q });
+      };
       function joinInvite(p) {
         const tid = p && +p.tid;
         if (!tid) return;
@@ -2481,7 +2486,7 @@
         try {
           await window.CrazyGames.SDK.init();
           const S = window.CrazyGames.SDK;
-          if (S.environment == "disabled") return;
+          if (S.environment == "disabled") return urlInvite();
           CG = S;
           try {
             CG.game.loadingStart();
@@ -2509,7 +2514,9 @@
             inst = 1;
             lobby();
           }
-        } catch (e) {}
+        } catch (e) {
+          CG || urlInvite();
+        }
       })();
     </script>
   </body>
