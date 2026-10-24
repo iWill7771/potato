@@ -643,6 +643,7 @@
         font-weight: 600;
       }
 
+      .tc i { max-width: 9em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .tc i::before {
         content: "";
         width: 16px;
@@ -1302,6 +1303,7 @@
       };
       const menu = () => {
         $("#gov").hidden = 1;
+        cgPlay(0);
         cgLeft();
         es && api({ t: "leave" });
         es && es.close();
@@ -1628,6 +1630,7 @@
         }, 200);
         snd();
         show("g");
+        cgPlay(1);
         turn();
       }
       const ai = (lv) =>
@@ -1677,6 +1680,7 @@
           const a = G.ty[i] == "ai",
             act = G.turn == i && !G.over;
           $("#t" + i).classList.toggle("on", act);
+          $("#t" + i + " i").textContent = (G.pn && G.pn[i]) || ["White", "Black"][i];
           $("#t" + i).classList.toggle(
             "lo",
             act && !a && !G.ty.includes("ai") && G.ds <= 0,
@@ -1695,6 +1699,7 @@
       const me = () =>
         G.ty.filter((t) => t == "h").length == 1 ? G.ty.indexOf("h") : -1;
       function fin(w, why) {
+        cgPlay(0);
         G.over = 1;
         G.win = w;
         G.legal = [];
@@ -2098,7 +2103,7 @@
       }
       function rematch() {
         $("#rqd").hidden = 1;
-        const o = G.on ? { on: 1, hc: G.hc } : G.lv != null ? { lv: G.lv } : {};
+        const o = G.on ? { on: 1, hc: G.hc, pn: G.pn } : G.lv != null ? { lv: G.lv } : {};
         start(G.ty, G.nm, G.view, o);
       }
       function again() {
@@ -2264,7 +2269,7 @@
       const api = (o) =>
         fetch(SRV + "/api", {
           method: "POST",
-          body: JSON.stringify({ ...o, id: myId }),
+          body: JSON.stringify({ ...o, id: myId, un: cgName }),
         }).catch(() => {});
       const net = (m) => api(m);
       addEventListener("pagehide", () => {
@@ -2351,6 +2356,7 @@
               {
                 on: 1,
                 hc: 0,
+                pn: m.names,
                 ...(m.st && {
                   S: m.st.S,
                   turn: m.st.turn,
@@ -2423,6 +2429,14 @@
         myTid = 0,
         cgName = "";
       const cgOn = () => !!CG;
+      let cgPlaying = 0;
+      function cgPlay(on) {
+        if (!cgOn() || cgPlaying == on) return;
+        cgPlaying = on;
+        try {
+          on ? CG.game.gameplayStart() : CG.game.gameplayStop();
+        } catch (e) {}
+      }
       function cgRoom(open) {
         if (!cgOn() || !myTid) return;
         try {
@@ -2469,6 +2483,15 @@
           const S = window.CrazyGames.SDK;
           if (S.environment == "disabled") return;
           CG = S;
+          try {
+            CG.game.loadingStart();
+            const done = () => {
+              try {
+                CG.game.loadingStop();
+              } catch (e) {}
+            };
+            document.readyState == "complete" ? done() : addEventListener("load", done);
+          } catch (e) {}
           try {
             const u = await CG.user.getUser();
             cgName = (u && u.username) || "";

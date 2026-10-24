@@ -90,6 +90,7 @@ function seqs(S, p, d) {
 }
 // ---- end rules
 
+const clean = (x) => String(x || "").replace(/[<>&"'`]/g, "").slice(0, 20);
 const die = () => randomInt(1, 7);
 const P = {}, // token -> { tok, res, tid, off }
   T = {}; // id -> { id, name, h, g, G, iv }
@@ -227,7 +228,7 @@ function resync(t) {
   if (g.op) g.open = [0, 0];
   g.tl = Date.now();
   const st = { S: g.S, turn: g.turn, op: g.op, dice: g.dice, tm: g.tm, ds: g.ds };
-  [t.h, t.g].forEach((x) => send(x, { t: "go", seat: seat(t, x), st, tid: t.id }));
+  [t.h, t.g].forEach((x) => send(x, { t: "go", seat: seat(t, x), st, tid: t.id, names: [t.hn, t.gn] }));
 }
 
 const RM = ["rq", "ra", "rn"];
@@ -239,7 +240,7 @@ function handle(tok, m) {
     if (t) leaveTable(tok);
     const name =
       String(m.name || "").replace(/[<>&"'`]/g, "").slice(0, 20) || "Table";
-    T[++tid] = { id: tid, name, h: tok, g: null, G: null, priv: m.priv ? 1 : 0 };
+    T[++tid] = { id: tid, name, h: tok, g: null, G: null, priv: m.priv ? 1 : 0, hn: clean(m.un), gn: "" };
     p.tid = tid;
     send(tok, { t: "made", tid });
     return bc();
@@ -250,10 +251,12 @@ function handle(tok, m) {
     if (jt.h == tok) return;
     if (t) leaveTable(tok);
     jt.g = tok;
+    jt.gn = clean(m.un);
     p.tid = jt.id;
     startGame(jt);
-    send(jt.h, { t: "go", seat: 0, tid: jt.id });
-    send(tok, { t: "go", seat: 1, tid: jt.id });
+    const names = [jt.hn, jt.gn];
+    send(jt.h, { t: "go", seat: 0, tid: jt.id, names });
+    send(tok, { t: "go", seat: 1, tid: jt.id, names });
     return bc();
   }
   if (m.t == "leave") return t && leaveTable(tok);
