@@ -1010,6 +1010,68 @@
           padding: 6px 4px;
         }
       }
+      #gov {
+        z-index: 150;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+      }
+      #gov .card {
+        gap: 12px;
+      }
+      #govt {
+        font-size: 1.8rem;
+        border: 0;
+        padding: 0;
+      }
+      @media (max-width: 768px) {
+        body {
+          padding: 6px;
+        }
+        .ctrl-btn {
+          padding: 10px 12px;
+        }
+        .ctrl-btn span:not(.ic) {
+          display: none;
+        }
+        .tc {
+          padding: 6px 12px;
+          font-size: 0.85rem;
+        }
+        #ms {
+          font-size: 1rem;
+        }
+        #board-container {
+          gap: 8px;
+        }
+        .card {
+          padding: 16px;
+        }
+      }
+      @media (max-height: 550px) {
+        .ctrl-btn {
+          padding: 10px;
+        }
+        .ctrl-btn span:not(.ic) {
+          display: none;
+        }
+        #board-container,
+        #st {
+          gap: 4px;
+        }
+        #tm {
+          gap: 8px;
+        }
+        #ms {
+          font-size: 0.95rem;
+        }
+        .modal .card {
+          padding: 14px;
+          gap: 8px;
+        }
+        #govt {
+          font-size: 1.3rem;
+        }
+      }
     </style>
   </head>
   <body>
@@ -1107,6 +1169,17 @@
       </div>
     </div>
 
+    <!-- Game result popup -->
+    <div id="gov" class="modal" hidden>
+      <div class="card">
+        <h3 id="govt"></h3>
+        <p id="govm"></p>
+        <button class="pr" id="govr" onclick="again()">Play Again</button>
+        <button onclick="menu()">Menu</button>
+        <button class="gh" onclick="G.pop = 1; draw()">View board</button>
+      </div>
+    </div>
+
     <!-- Game View -->
     <div id="g" hidden>
       <div id="board-container">
@@ -1200,6 +1273,7 @@
         music(id == "g" ? "g" : "m");
       };
       const menu = () => {
+        $("#gov").hidden = 1;
         es && api({ t: "leave" });
         es && es.close();
         es = 0;
@@ -1583,6 +1657,7 @@
         G.ty.filter((t) => t == "h").length == 1 ? G.ty.indexOf("h") : -1;
       function fin(w, why) {
         G.over = 1;
+        G.win = w;
         G.legal = [];
         G.rem = [];
         sel = null;
@@ -1990,7 +2065,7 @@
       function again() {
         if (!G || !G.over) return;
         if (!G.on) return rematch();
-        if (G.ask) return;
+        if (G.ask || G.left) return;
         G.ask = 1;
         net({ t: "rq" });
         draw();
@@ -2090,9 +2165,21 @@
         $("#dc").hidden = !!cf || !!G.over;
         $("#gv").hidden = !!G.over;
         const rs = $("#rs");
-        rs.hidden = !G.over;
-        rs.disabled = !!G.ask;
-        rs.textContent = G.ask ? "Waiting for response..." : "Play Again";
+        const txt = G.ask ? "Waiting for response..." : "Play Again",
+          h0 = me();
+        rs.hidden = !(G.over && G.pop);
+        rs.disabled = !!G.ask || !!G.left;
+        rs.textContent = txt;
+        $("#gov").hidden = !(G.over && G.win != null && !G.pop);
+        $("#govr").disabled = !!G.ask || !!G.left;
+        $("#govr").textContent = txt;
+        $("#govt").textContent =
+          h0 < 0
+            ? ["White", "Black"][G.win] + " wins!"
+            : G.win == h0
+              ? "🏆 You Win!"
+              : "😞 You Lose";
+        $("#govm").textContent = G.msg;
         const pc = (i) => {
           let s = G.S.bar[i] * 25;
           for (let r = 0; r < 24; r++) s += G.S.c[i][A(i, r)] * (24 - r);
@@ -2213,7 +2300,12 @@
               if (m.t == "c") end();
               if (m.t == "to") timeout(m.p);
               if (m.t == "dc" && !G.over) {
-                fin(1 - G.ty.indexOf("net"), "📡 Opponent disconnected. ");
+                fin(
+                  1 - G.ty.indexOf("net"),
+                  m.why == "left"
+                    ? "Opponent left the game. "
+                    : "📡 Opponent disconnected. ",
+                );
                 draw();
               }
               if (m.t == "sf" && !G.over) {
@@ -2234,9 +2326,11 @@
               }
             }, w - Date.now());
           }
-          if (m.t == "left") {
-            alert("Opponent left");
-            menu();
+          if (m.t == "left" && G && G.on) {
+            G.left = 1;
+            G.ask = 0;
+            G.msg = "Opponent left";
+            draw();
           }
         };
       }

@@ -8,7 +8,7 @@ const http = require("http"),
 const PORT = +process.env.PORT || 3000;
 const TD = +process.env.TD_MS || 10000, // time per move (ms)
   TR = +process.env.TR_MS || 60000, // reserve time per player (ms)
-  GRACE = +process.env.GRACE_MS || 60000; // reconnect grace period (ms)
+  GRACE = +process.env.GRACE_MS || 20000; // reconnect grace period (ms)
 const MIME = {
   ".html": "text/html;charset=utf-8",
   ".mp3": "audio/mpeg",
@@ -120,7 +120,12 @@ function leaveTable(tok) {
   const t = T[P[tok].tid];
   if (!t) return;
   const o = other(t, tok);
-  o && send(o, { t: "left" });
+  if (o) {
+    // leaving a running game = the opponent wins
+    const lv = t.g && t.G && !t.G.over;
+    if (lv) t.G.over = 1;
+    send(o, lv ? { t: "dc", why: "left" } : { t: "left" });
+  }
   removeTable(t);
 }
 
