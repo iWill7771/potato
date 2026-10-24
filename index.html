@@ -1320,8 +1320,9 @@
           u: ["undo"],
           w: ["win"],
           l: ["loose"],
+          k: ["click"],
         },
-        VOL = { d: 0.5, m: 1, h: 1, c: 0.8, u: 0.8, w: 0.8, l: 0.8 },
+        VOL = { d: 0.5, m: 1, h: 1, c: 0.8, u: 0.8, w: 0.8, l: 0.8, k: 0.7 },
         EX = ["mp3", "wav", "ogg"],
         SA = {};
       for (const k in SN)
@@ -1371,6 +1372,11 @@
         document.querySelectorAll(".mub").forEach((b) => b.classList.toggle("off", !!mmuted));
         mmuted ? Object.values(MU).forEach((a) => a.pause()) : music(curMu);
       };
+      /* click.mp3 on every menu button (not on in-game buttons) */
+      document.addEventListener("click", (e) => {
+        const b = e.target.closest && e.target.closest("button");
+        b && !b.closest("#g") && snd("k");
+      });
       function snd(k) {
         if (muted) return;
         const L = (SA[k] || []).filter((a) => !a.bad && a.readyState > 2);
@@ -1384,6 +1390,7 @@
           c.play().catch(() => {});
           return;
         }
+        if (k == "k") return;
         try {
           AC = AC || new AudioContext();
           AC.resume();
