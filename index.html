@@ -1087,6 +1087,7 @@
         }
       }
     </style>
+      <script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>
   </head>
   <body>
     <!-- Main Menu Panel -->
@@ -1146,6 +1147,7 @@
         </div>
         <p id="lr" class="hint"></p>
         <p id="lm"></p>
+        <button id="inv" class="pr" onclick="copyInvite()" hidden>Copy invite link</button>
       </div>
       <div class="card">
         <h3>Open Tables</h3>
@@ -1300,6 +1302,7 @@
       };
       const menu = () => {
         $("#gov").hidden = 1;
+        cgLeft();
         es && api({ t: "leave" });
         es && es.close();
         es = 0;
@@ -1311,7 +1314,8 @@
       const mineT = () =>
         G && G.ty[G.turn] == "h" && !G.over && !G.busy && G.legal.length > 0;
       let muted = 0,
-        mmuted = 0;
+        mmuted = 0,
+        sdkMute = 0;
       const SN = {
           d: ["roll1", "roll2", "roll3", "roll4"],
           m: ["move1", "move2", "move3"],
@@ -1355,9 +1359,9 @@
       function music(k) {
         curMu = k;
         for (const x in MU) x != k && MU[x].pause();
-        !mmuted && !MU[k].bad && MU[k].play().catch(() => {});
+        !mmuted && !sdkMute && !MU[k].bad && MU[k].play().catch(() => {});
       }
-      const kick = () => !mmuted && MU[curMu].paused && music(curMu);
+      const kick = () => !mmuted && !sdkMute && MU[curMu].paused && music(curMu);
       addEventListener("pointerdown", kick);
       addEventListener("keydown", kick);
       const mute = () => {
@@ -1378,7 +1382,7 @@
         b && !b.closest("#g") && snd("k");
       });
       function snd(k) {
-        if (muted) return;
+        if (muted || sdkMute) return;
         const L = (SA[k] || []).filter((a) => !a.bad && a.readyState > 2);
         if (L.length) {
           let a;
@@ -2275,7 +2279,7 @@
       function mk() {
         api({
           t: "create",
-          name: $("#nm").value.trim() || "Table",
+          name: $("#nm").value.trim() || cgName || "Table",
         });
       }
       function lobby() {
@@ -2298,12 +2302,27 @@
         };
         es.onmessage = (e) => {
           const m = JSON.parse(e.data);
+          if (m.t == "hi") {
+            if (want) {
+              api({ t: "join", tid: want });
+              want = 0;
+            } else if (inst) {
+              api({ t: "create", name: cgName || "Table", priv: 1 });
+              inst = 0;
+            }
+          }
+          if (m.t == "nojoin")
+            $("#lm").textContent = "That table is no longer available";
           if (m.t == "hi" && !m.ing && G && G.on && !G.over) {
             G.left = 1;
             fin(G.ty.indexOf("net"), "📡 Connection lost. ");
           }
-          if (m.t == "made")
+          if (m.t == "made") {
             $("#lm").textContent = "Table created, waiting for opponent...";
+            myTid = m.tid;
+            $("#inv").hidden = !(cgOn() && myTid);
+            cgRoom(1);
+          }
           if (m.t == "tables")
             $("#tl").innerHTML = m.l.length
               ? m.l
@@ -2313,6 +2332,11 @@
                   )
                   .join("")
               : "<p>No open tables available</p>";
+          if (m.t == "go") {
+            myTid = m.tid;
+            $("#inv").hidden = 1;
+            cgRoom(0);
+          }
           if (m.t == "go")
             start(
               m.seat ? ["net", "h"] : ["h", "net"],
@@ -2354,6 +2378,7 @@
               if (m.t == "c") end();
               if (m.t == "to") timeout(m.p);
               if (m.t == "dc" && !G.over) {
+                cgLeft();
                 G.left = 1;
                 fin(
                   1 - G.ty.indexOf("net"),
@@ -2382,6 +2407,7 @@
             }, w - Date.now());
           }
           if (m.t == "left" && G && G.on) {
+            cgLeft();
             G.left = 1;
             G.ask = 0;
             G.msg = "Opponent left";
@@ -2389,6 +2415,79 @@
           }
         };
       }
+
+      /* ---- CrazyGames SDK: invite link, room data, instant multiplayer, mute ---- */
+      let CG = 0,
+        want = 0,
+        inst = 0,
+        myTid = 0,
+        cgName = "";
+      const cgOn = () => !!CG;
+      function cgRoom(open) {
+        if (!cgOn() || !myTid) return;
+        try {
+          CG.game.updateRoom(
+            open
+              ? { roomId: "bg" + myTid, isJoinable: true, inviteParams: { tid: String(myTid) } }
+              : { roomId: "bg" + myTid, isJoinable: false },
+          );
+        } catch (e) {}
+      }
+      function cgLeft() {
+        $("#inv").hidden = 1;
+        myTid = 0;
+        if (cgOn())
+          try {
+            CG.game.leftRoom();
+          } catch (e) {}
+      }
+      function copyInvite() {
+        if (!cgOn() || !myTid) return;
+        let link = "";
+        try {
+          link = CG.game.inviteLink({ tid: String(myTid) });
+        } catch (e) {}
+        if (!link) return;
+        const ok = () => ($("#lm").textContent = "Invite link copied! Send it to your friend.");
+        navigator.clipboard
+          ? navigator.clipboard.writeText(link).then(ok, () => prompt("Copy this link:", link))
+          : prompt("Copy this link:", link);
+      }
+      function joinInvite(p) {
+        const tid = p && +p.tid;
+        if (!tid) return;
+        want = tid;
+        if (es) {
+          show("lb");
+          api({ t: "join", tid });
+          want = 0;
+        } else lobby();
+      }
+      (async function cgInit() {
+        try {
+          await window.CrazyGames.SDK.init();
+          const S = window.CrazyGames.SDK;
+          if (S.environment == "disabled") return;
+          CG = S;
+          try {
+            const u = await CG.user.getUser();
+            cgName = (u && u.username) || "";
+          } catch (e) {}
+          const am = (st) => {
+            sdkMute = st && st.muteAudio ? 1 : 0;
+            sdkMute ? Object.values(MU).forEach((a) => a.pause()) : music(curMu);
+          };
+          am(CG.game.settings);
+          CG.game.addSettingsChangeListener(am);
+          CG.game.addJoinRoomListener(joinInvite);
+          const ip = CG.game.inviteParams;
+          if (ip && ip.tid) joinInvite(ip);
+          else if (CG.game.isInstantMultiplayer) {
+            inst = 1;
+            lobby();
+          }
+        } catch (e) {}
+      })();
     </script>
   </body>
 </html>

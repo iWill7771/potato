@@ -106,7 +106,7 @@ const both = (t, m) => {
 };
 const bc = () => {
   const l = Object.values(T)
-    .filter((t) => !t.g)
+    .filter((t) => !t.g && !t.priv)
     .map((t) => ({ id: t.id, name: t.name }));
   for (const k in P) send(k, { t: "tables", l });
 };
@@ -227,7 +227,7 @@ function resync(t) {
   if (g.op) g.open = [0, 0];
   g.tl = Date.now();
   const st = { S: g.S, turn: g.turn, op: g.op, dice: g.dice, tm: g.tm, ds: g.ds };
-  [t.h, t.g].forEach((x) => send(x, { t: "go", seat: seat(t, x), st }));
+  [t.h, t.g].forEach((x) => send(x, { t: "go", seat: seat(t, x), st, tid: t.id }));
 }
 
 const RM = ["rq", "ra", "rn"];
@@ -239,20 +239,21 @@ function handle(tok, m) {
     if (t) leaveTable(tok);
     const name =
       String(m.name || "").replace(/[<>&"'`]/g, "").slice(0, 20) || "Table";
-    T[++tid] = { id: tid, name, h: tok, g: null, G: null };
+    T[++tid] = { id: tid, name, h: tok, g: null, G: null, priv: m.priv ? 1 : 0 };
     p.tid = tid;
-    send(tok, { t: "made" });
+    send(tok, { t: "made", tid });
     return bc();
   }
   if (m.t == "join") {
     const jt = T[m.tid];
-    if (!jt || jt.g || jt.h == tok) return;
+    if (!jt || jt.g) return send(tok, { t: "nojoin" });
+    if (jt.h == tok) return;
     if (t) leaveTable(tok);
     jt.g = tok;
     p.tid = jt.id;
     startGame(jt);
-    send(jt.h, { t: "go", seat: 0 });
-    send(tok, { t: "go", seat: 1 });
+    send(jt.h, { t: "go", seat: 0, tid: jt.id });
+    send(tok, { t: "go", seat: 1, tid: jt.id });
     return bc();
   }
   if (m.t == "leave") return t && leaveTable(tok);
@@ -395,7 +396,7 @@ http
       send(tok, { t: "hi", ing });
       bc();
       if (ing) resync(t);
-      else if (t && !t.g) send(tok, { t: "made" });
+      else if (t && !t.g) send(tok, { t: "made", tid: t.id });
       const hb = setInterval(() => r.write(": hb\n\n"), 20000);
       q.on("close", () => {
         clearInterval(hb);
