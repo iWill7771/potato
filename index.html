@@ -1176,7 +1176,6 @@
         <p id="govm"></p>
         <button class="pr" id="govr" onclick="again()">Play Again</button>
         <button onclick="menu()">Menu</button>
-        <button class="gh" onclick="G.pop = 1; draw()">View board</button>
       </div>
     </div>
 
@@ -1197,9 +1196,6 @@
               </span>
               <button id="rl" onclick="roll()">Roll</button>
               <button id="cf" class="pr" onclick="ok()">Confirm</button>
-              <button id="rs" class="pr" onclick="again()" hidden>
-                Play Again
-              </button>
             </div>
           </div>
           <div id="pips">
@@ -2167,11 +2163,9 @@
         const rs = $("#rs");
         const txt = G.ask ? "Waiting for response..." : "Play Again",
           h0 = me();
-        rs.hidden = !(G.over && G.pop);
-        rs.disabled = !!G.ask || !!G.left;
-        rs.textContent = txt;
-        $("#gov").hidden = !(G.over && G.win != null && !G.pop);
-        $("#govr").disabled = !!G.ask || !!G.left;
+        $("#gov").hidden = !(G.over && G.win != null);
+        $("#govr").hidden = !!G.left;
+        $("#govr").disabled = !!G.ask;
         $("#govr").textContent = txt;
         $("#govt").textContent =
           h0 < 0
@@ -2254,6 +2248,7 @@
         es.onmessage = (e) => {
           const m = JSON.parse(e.data);
           if (m.t == "hi" && !m.ing && G && G.on && !G.over) {
+            G.left = 1;
             fin(G.ty.indexOf("net"), "📡 Connection lost. ");
           }
           if (m.t == "made")
@@ -2308,6 +2303,7 @@
               if (m.t == "c") end();
               if (m.t == "to") timeout(m.p);
               if (m.t == "dc" && !G.over) {
+                G.left = 1;
                 fin(
                   1 - G.ty.indexOf("net"),
                   m.why == "left"
