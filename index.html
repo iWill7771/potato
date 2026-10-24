@@ -960,8 +960,8 @@
         font: 700 max(1.5cqw, 13px) var(--serif);
         padding: 0.8em 1.8em;
         border-radius: 14px;
-        border: 1px solid var(--line);
-        background: rgba(14, 42, 32, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        background: rgba(10, 10, 10, 0.92);
         box-shadow: 0 8px 22px rgba(0, 0, 0, 0.6);
       }
       #rs:hover,
@@ -1243,6 +1243,11 @@
     </div>
 
     <script>
+      // სერვერის მისამართი (render.com). CrazyGames-ზე თამაში ამ სერვერს უკავშირდება.
+      const SRV =
+        /onrender\.com$|^localhost$|^\d+\.\d+\.\d+\.\d+$/.test(location.hostname)
+          ? ""
+          : "https://backgammon-game-x434.onrender.com";
       const A = (p, r) => (p ? 23 - r : r),
         $ = (s) => document.querySelector(s),
         P = ["", "4", "08", "048", "0268", "04268", "023568"];
@@ -2190,24 +2195,36 @@
         tshow();
       }
       async function fs() {
+        const d = document,
+          e = d.documentElement,
+          rq = e.requestFullscreen || e.webkitRequestFullscreen,
+          ex = d.exitFullscreen || d.webkitExitFullscreen;
         try {
-          if (document.fullscreenElement) {
-            await document.exitFullscreen();
-          } else {
-            await document.documentElement.requestFullscreen();
-            await screen.orientation.lock("landscape");
+          if (d.fullscreenElement || d.webkitFullscreenElement) {
+            await ex.call(d);
+            return;
           }
+          if (rq) await rq.call(e);
         } catch (x) {}
+        try {
+          await screen.orientation.lock("landscape");
+        } catch (x) {
+          try {
+            await screen.orientation.lock("landscape-primary");
+          } catch (y) {}
+        }
       }
-      document.onfullscreenchange = () => {
-        const isFs = !!document.fullscreenElement;
+      document.onfullscreenchange = document.onwebkitfullscreenchange = () => {
+        const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
         $("#fsbt").textContent = isFs ? "Exit Fullscreen" : "Fullscreen";
         if (!isFs && screen.orientation && screen.orientation.unlock) {
           screen.orientation.unlock();
         }
       };
+      if (!document.documentElement.requestFullscreen && !document.documentElement.webkitRequestFullscreen)
+        $("#fsb").style.display = "none";
       const api = (o) =>
-        fetch("/api", {
+        fetch(SRV + "/api", {
           method: "POST",
           body: JSON.stringify({ ...o, id: myId }),
         }).catch(() => {});
@@ -2216,7 +2233,7 @@
         if (es && myId)
           try {
             navigator.sendBeacon(
-              "/api",
+              SRV + "/api",
               JSON.stringify({ t: "leave", id: myId }),
             );
           } catch (e) {}
@@ -2241,7 +2258,7 @@
             sessionStorage.nardTok = myId;
           } catch (e) {}
         }
-        es = new EventSource("/ev?tok=" + myId);
+        es = new EventSource(SRV + "/ev?tok=" + myId);
         es.onerror = () => {
           $("#tl").innerHTML = "<p>Connecting to the server...</p>";
         };

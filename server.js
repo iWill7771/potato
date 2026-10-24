@@ -363,6 +363,15 @@ function dropped(tok) {
 http
   .createServer((q, r) => {
     const u = new URL(q.url, "http://x");
+    // CORS: allows the CrazyGames-hosted game to talk to this server
+    r.setHeader("Access-Control-Allow-Origin", "*");
+    if (q.method == "OPTIONS") {
+      r.writeHead(204, {
+        "Access-Control-Allow-Methods": "GET, POST",
+        "Access-Control-Allow-Headers": "Content-Type",
+      });
+      return r.end();
+    }
     if (u.pathname == "/ev") {
       const tok = u.searchParams.get("tok") || "";
       if (!/^[\w-]{8,64}$/.test(tok)) {
