@@ -1240,7 +1240,7 @@
             const host = location.protocol === 'file:' ? custom : (custom || location.host);
             if (!host) { wsQueue = []; return netMsg('ფაილიდან გახსნისას სერვერის მისამართი ჩაწერეთ (მაგ. 192.168.1.5:3000)', true); }
             let sock;
-            try { sock = ws = new WebSocket('ws://' + host); } catch (e) { wsQueue = []; return netMsg('ვერ დავუკავშირდი სერვერს', true); }
+            try { sock = ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + host); } catch (e) { wsQueue = []; return netMsg('ვერ დავუკავშირდი სერვერს', true); }
             sock.onopen = () => { const q = wsQueue; wsQueue = []; q.forEach(f => f()); };
             sock.onclose = () => {
                 if (ws !== sock) return;
