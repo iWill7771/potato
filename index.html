@@ -1,467 +1,297 @@
-<!DOCTYPE html>
-<html lang="ka">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ქალაქობანა</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;600;800&display=swap" rel="stylesheet">
+<!doctype html>
+<html lang="ka"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ფურთი</title>
 <style>
-  :root {
-    --paper: #f8fbff;
-    --grid: #d3e3f4;
-    --ink: #1f3a93;
-    --ink-soft: #5d73b8;
-    --margin: #d9534f;
-    --good: #1c7c4d;
-    --shared: #ffe27a;
-    --muted: #8a94a8;
-    --line: #9db4dc;
-    --font: "Noto Sans Georgian", "Sylfaen", "Segoe UI", system-ui, sans-serif;
-  }
-  * { box-sizing: border-box; }
-  html, body { margin: 0; }
-  body {
-    font-family: var(--font);
-    color: var(--ink);
-    background-color: var(--paper);
-    background-image:
-      linear-gradient(var(--grid) 1px, transparent 1px),
-      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
-    background-size: 28px 28px;
-    min-height: 100vh;
-    line-height: 1.5;
-  }
-  /* რვეულის წითელი ველი */
-  body::before {
-    content: "";
-    position: fixed; top: 0; bottom: 0; left: 44px; width: 2px;
-    background: var(--margin); opacity: .55; pointer-events: none;
-  }
-  main { max-width: 760px; margin: 0 auto; padding: 28px 20px 60px 72px; }
-  @media (max-width: 560px) {
-    body::before { left: 12px; }
-    main { padding: 20px 14px 50px 28px; }
-  }
-  h1 { font-size: 2.4rem; font-weight: 800; margin: 0 0 4px; letter-spacing: -.01em; }
-  h2 { font-size: 1.25rem; font-weight: 600; margin: 0 0 12px; }
-  p { margin: 0 0 12px; }
-  .sub { color: var(--ink-soft); }
-  .sheet {
-    background: rgba(255,255,255,.88);
-    border: 1.5px solid var(--line);
-    padding: 18px 20px;
-    margin: 18px 0;
-  }
-  label.f { display: block; font-weight: 600; margin-bottom: 4px; }
-  input[type=text], input[type=number] {
-    font: inherit; color: var(--ink);
-    background: transparent;
-    border: none; border-bottom: 2px solid var(--line);
-    padding: 6px 2px; width: 100%;
-    border-radius: 0;
-  }
-  input:focus-visible, button:focus-visible {
-    outline: 3px solid var(--ink); outline-offset: 2px;
-  }
-  input[type=text]:focus { border-bottom-color: var(--ink); }
-  input[readonly] { color: var(--ink-soft); }
-  button {
-    font: inherit; font-weight: 600; cursor: pointer;
-    color: #fff; background: var(--ink);
-    border: 2px solid var(--ink); padding: 10px 18px;
-    border-radius: 3px;
-  }
-  button.ghost { background: transparent; color: var(--ink); }
-  button:disabled { opacity: .45; cursor: not-allowed; }
-  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
-  .row > * { flex: 1 1 160px; }
-  .row > button { flex: 0 0 auto; }
-  .err { color: var(--margin); min-height: 1.5em; font-weight: 600; }
+:root{--gold:#e8b94a}
+*{box-sizing:border-box}html,body{height:100%}
+body{margin:0;font:15px 'Noto Sans Georgian',system-ui,sans-serif;color:#f6f0dc;background:radial-gradient(ellipse at 50% 40%,#238a56,#0b3a27 78%);overflow-x:hidden}
+button{font:inherit;font-weight:700;border:0;border-radius:12px;padding:11px 20px;background:var(--gold);color:#2b1d00;cursor:pointer;box-shadow:0 3px 0 #9a7418}
+button:active{transform:translateY(2px);box-shadow:0 1px 0 #9a7418}button:disabled{opacity:.35;cursor:default}
+input,select{font:inherit;padding:10px;border-radius:10px;border:0;width:100%}
+#ctl{position:fixed;top:8px;right:8px;display:flex;gap:6px;z-index:50}
+#ctl button{padding:0;width:38px;height:38px;border-radius:50%;font-size:18px;box-shadow:0 2px 0 #9a7418}
+.box{max-width:380px;margin:8vh auto;padding:26px;border-radius:20px;background:#0a2c1de6;display:grid;gap:12px;box-shadow:0 20px 50px #0008}
+h1{margin:0;font-size:44px;color:var(--gold);text-align:center}.box p,.box small{margin:0;opacity:.8;text-align:center}details{font-size:13px;opacity:.9}
+.game{max-width:1000px;margin:auto;padding:8px;height:100dvh;display:grid;grid-template-rows:auto 1fr auto auto;gap:8px}
+.bar{display:flex;justify-content:space-between;gap:4px 14px;flex-wrap:wrap;padding-right:136px;opacity:.92;font-size:14px;align-items:center}
+.arena{display:grid;grid-template-columns:minmax(78px,150px) 1fr minmax(78px,150px);grid-template-rows:auto 1fr;grid-template-areas:". top ." "left table right";gap:8px;min-height:0}
+.seat{position:relative;padding:8px 12px;border-radius:14px;background:#0005;border:2px solid transparent;display:grid;gap:5px;justify-items:center;text-align:center;transition:background .3s}
+.pos-left{grid-area:left;align-self:center}.pos-top{grid-area:top;justify-self:center;min-width:190px}.pos-right{grid-area:right;align-self:center}
+.nm{font-weight:700;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.backs{display:flex;justify-content:center;min-height:31px;padding-left:10px}
+.backs s{width:22px;aspect-ratio:5/7;margin-left:-10px;border-radius:4px;border:2px solid #fff;background:repeating-linear-gradient(45deg,#8c1d2b 0 4px,#a82b3b 4px 8px)}
+.inf{display:flex;gap:10px;align-items:center;font-size:13px;flex-wrap:wrap;justify-content:center}.inf b{color:var(--gold);font-size:16px}
+.pile{width:26px;aspect-ratio:5/7;border-radius:5px;border:2px solid #fff;background:repeating-linear-gradient(45deg,#8c1d2b 0 4px,#a82b3b 4px 8px);display:grid;place-items:center;font:800 12px system-ui;color:#fff;text-shadow:0 1px 2px #000}
+.pile.pulse{animation:pp .5s}@keyframes pp{50%{transform:scale(1.5);box-shadow:0 0 14px var(--gold)}}
+.dl{position:absolute;top:-11px;right:-11px;width:28px;height:28px;border-radius:50%;background:#fff;color:#111;font:800 15px/28px system-ui;text-align:center;box-shadow:0 2px 5px #0009,inset 0 0 0 3px #ddd,inset 0 0 0 4px #999}
+@keyframes pulse{50%{box-shadow:0 0 28px 6px #e8b94acc}}
+.seat.turn{border-color:var(--gold);background:#4a3a0acc;animation:pulse 1.2s ease-in-out infinite}
+.seat.turn .nm::before{content:'▶ ';color:var(--gold)}
+.th{color:#ffe9a8;font-weight:700;animation:bl 1.2s infinite}.seat.me .th{font-size:14px}@keyframes bl{50%{opacity:.4}}
+.table{grid-area:table;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-content:center;padding:18px;border-radius:26px;background:#0003;box-shadow:inset 0 0 30px #0006;min-height:150px;border:2px solid transparent;transition:border-color .3s}
+.table.mine{border-color:#e8b94a66}.table .c{--w:min(84px,13vw,11vh)}
+.msg{text-align:center;min-height:24px;font-size:16px;font-weight:700;color:#ffe9a8}
+.me{grid-auto-flow:column;justify-self:center;align-items:center;gap:16px}
+.hand{display:flex;gap:10px;justify-content:center;padding-top:14px}.hand .c{--w:min(104px,20vw,15vh)}
+.btns{display:flex;gap:12px;justify-content:center;margin-top:8px}
+/* ბანქო */
+.c{--w:84px;width:var(--w);aspect-ratio:5/7;font-size:var(--w);border-radius:.08em;background:linear-gradient(#fff,#f3eedd);color:#1b1b1b;position:relative;box-shadow:0 3px 8px #0007;cursor:pointer;transition:transform .15s;user-select:none;flex:none}
+.c.red{color:#c4162a}.c.hd{visibility:hidden}
+.c .k{position:absolute;left:.04em;top:.04em;width:.2em;display:grid;justify-items:center;gap:.01em;font:700 .2em/1 Georgia,serif;letter-spacing:-.04em}
+.c .k svg{width:.15em;height:.15em}.c .k.z{left:auto;top:auto;right:.04em;bottom:.04em;transform:rotate(180deg)}
+.pp{position:absolute;width:.21em;height:.21em;transform:translate(-50%,-50%)}.pp.r{transform:translate(-50%,-50%) rotate(180deg)}.pp.big{width:.5em;height:.5em}
+.fc{position:absolute;inset:7% 27%;border:.012em solid currentColor;border-radius:.04em;background:linear-gradient(160deg,#fff8de,#ecd387);display:flex;flex-direction:column;align-items:center;justify-content:space-around}
+.fc span{font:700 .34em/1 Georgia,serif}.fc svg{width:.13em;height:.13em}.fc svg.r{transform:rotate(180deg)}
+.c:hover{transform:translateY(-5px)}.c.sel{transform:translateY(-14px);outline:3px solid var(--gold)}.c.on{outline:3px solid #4fd6ff;transform:translateY(-6px)}.c.hint{outline:2px dashed #fffa}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:30}.gh{transition:none!important;pointer-events:none;cursor:default}.gh:hover{transform:none}
+.gh.cap{outline:3px solid #4fd6ff;box-shadow:0 0 22px #4fd6ff}
+.ov{position:fixed;inset:0;background:#000a;display:flex;overflow:auto;padding:12px;z-index:40}.ov .box{margin:auto;width:100%;max-width:470px}
+.ov.late{animation:ovin .5s var(--dl) backwards}@keyframes ovin{from{opacity:0}}
+.prog{display:flex;gap:7px;align-items:center}.dots{display:inline-flex;gap:4px}.dots i{width:11px;height:11px;border-radius:50%;border:2px solid #e8b94a88}.dots i.d{background:var(--gold);border-color:var(--gold)}.dots i.a{border-color:var(--gold);background:#e8b94a55}
+.dk{display:flex;gap:6px;align-items:center}.dk s{width:15px;aspect-ratio:5/7;border-radius:3px;border:2px solid #fff;background:repeating-linear-gradient(45deg,#8c1d2b 0 4px,#a82b3b 4px 8px)}
+.ban{position:fixed;left:50%;top:36%;transform:translate(-50%,-50%);z-index:35;pointer-events:none;padding:14px 26px;border-radius:18px;background:#0a2c1def;border:2px solid var(--gold);text-align:center;box-shadow:0 14px 40px #000a;max-width:92vw}
+.ban b{display:block;font-size:24px;color:var(--gold)}.ban span{font-size:14px;opacity:.9}
+.sm{border-collapse:collapse;width:100%;font-size:14px}.sm th{font-weight:600;font-size:12px;opacity:.7;padding:2px 4px}.sm td{padding:8px 4px;text-align:center;border-top:1px solid #fff2}
+.sm td:first-child{text-align:left;max-width:96px}.sm .g{color:var(--gold);font-weight:700}.sm sup{font-size:10px;margin-left:2px}.sm tr.win td{background:#e8b94a22}.rd{color:#ff7b8a}
+.box p.note{font-size:13px;opacity:.9}
 
-  /* ლობი */
-  .code {
-    font-size: 2.6rem; font-weight: 800; letter-spacing: .25em;
-    border: 2px dashed var(--ink); display: inline-block; padding: 2px 16px 2px 22px;
-  }
-  .players { list-style: none; margin: 0; padding: 0; }
-  .players li {
-    display: flex; justify-content: space-between; gap: 10px;
-    padding: 6px 2px; border-bottom: 1px solid var(--grid);
-  }
-  .players .off { color: var(--muted); }
-  .tag { font-size: .8rem; color: var(--ink-soft); margin-left: 6px; }
-
-  /* რაუნდი */
-  .roundbar { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; }
-  .bigletter {
-    font-size: clamp(110px, 26vw, 190px); font-weight: 800; line-height: 1;
-    display: inline-block; transform: rotate(-3deg);
-    background: linear-gradient(transparent 62%, var(--shared) 62%, var(--shared) 90%, transparent 90%);
-    padding: 0 12px; margin: 6px 0 10px;
-  }
-  .cat { display: grid; grid-template-columns: 150px 1fr; gap: 12px; align-items: end; margin-bottom: 8px; }
-  @media (max-width: 560px) { .cat { grid-template-columns: 1fr; gap: 0; } }
-  .cat span { color: var(--ink-soft); font-weight: 600; padding-bottom: 6px; }
-  .cat.bad input { border-bottom-color: var(--margin); }
-
-  .stopwrap { margin-top: 18px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
-  .stamp {
-    background: transparent; color: var(--margin);
-    border: 4px double var(--margin); border-radius: 6px;
-    font-size: 1.9rem; font-weight: 800; letter-spacing: .08em;
-    padding: 6px 26px; transform: rotate(-3deg);
-  }
-  .stamp:disabled { opacity: .35; }
-  .stamp:not(:disabled):hover { background: var(--margin); color: #fff; }
-  .hint { color: var(--ink-soft); }
-
-  .countdown {
-    margin-top: 16px; padding: 12px 14px; border: 2px solid var(--margin);
-    color: var(--margin); font-weight: 600;
-  }
-  .countdown .bar { height: 6px; background: var(--grid); margin-top: 8px; }
-  .countdown .bar i { display: block; height: 100%; background: var(--margin); width: 100%; }
-  .time { font-size: 1.6rem; font-weight: 800; }
-
-  /* შედეგები */
-  .tablewrap { overflow-x: auto; }
-  table { border-collapse: collapse; width: 100%; background: rgba(255,255,255,.9); }
-  th, td { border: 1px solid var(--line); padding: 6px 8px; text-align: left; vertical-align: top; font-size: .95rem; }
-  th { font-weight: 600; background: #eef4fc; }
-  td.unique .pts { color: var(--good); font-weight: 800; }
-  td.shared { background: var(--shared); }
-  td.shared .pts { font-weight: 800; }
-  td.invalid .txt, td.empty .txt { text-decoration: line-through; color: var(--muted); }
-  td.invalid .pts, td.empty .pts { color: var(--muted); }
-  .pts { margin-left: 6px; font-size: .85rem; }
-  td.total, th.total { font-weight: 800; text-align: right; white-space: nowrap; }
-  .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: .85rem; color: var(--ink-soft); margin-top: 8px; }
-  .legend b { padding: 0 6px; border: 1px solid var(--line); }
-  .legend .s { background: var(--shared); }
-
-  .rank { list-style: none; padding: 0; margin: 0 0 16px; counter-reset: r; }
-  .rank li { display: flex; justify-content: space-between; padding: 10px 4px; border-bottom: 1px solid var(--line); font-size: 1.15rem; }
-  .rank li:first-child { font-weight: 800; font-size: 1.5rem; }
-  .rank li::before { counter-increment: r; content: counter(r) "."; width: 2rem; color: var(--ink-soft); }
-  .rank li span:first-of-type { flex: 1; }
-
-  .hidden { display: none !important; }
-  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
-</style>
-</head>
-<body>
-<main id="app"></main>
-
+.hand .c{touch-action:none;cursor:grab}.gh.dg{transform:scale(1.06);box-shadow:0 16px 34px #000b;cursor:grabbing}
+.table.over{border-color:var(--gold);background:#0006}
+.dlab{position:absolute;z-index:6;padding:4px 11px;border-radius:10px;background:#0a2c1def;border:1px solid var(--gold);font-weight:700;font-size:13px;white-space:nowrap;pointer-events:none;transform:translate(-50%,-100%);color:#ffe9a8}
+.sec{background:#ffffff26;color:#f6f0dc;box-shadow:0 3px 0 #0006}.rl{display:grid;gap:8px}
+@media(max-width:520px){.pos-top{min-width:150px}.seat{padding:6px}.backs s{width:16px;margin-left:-8px}}
+</style></head><body>
+<svg width="0" height="0" style="position:absolute"><defs>
+<symbol id="s0" viewBox="0 0 100 100"><path d="M50 5C50 5 10 38 10 60C10 76 24 84 37 80C42 78 46 75 47 72C46 82 42 90 33 95H67C58 90 54 82 53 72C54 75 58 78 63 80C76 84 90 76 90 60C90 38 50 5 50 5Z"/></symbol>
+<symbol id="s1" viewBox="0 0 100 100"><path d="M50 94C50 94 6 62 6 33C6 17 18 7 31 7C41 7 48 13 50 20C52 13 59 7 69 7C82 7 94 17 94 33C94 62 50 94 50 94Z"/></symbol>
+<symbol id="s2" viewBox="0 0 100 100"><path d="M50 3L86 50L50 97L14 50Z"/></symbol>
+<symbol id="s3" viewBox="0 0 100 100"><circle cx="50" cy="28" r="22"/><circle cx="26" cy="60" r="22"/><circle cx="74" cy="60" r="22"/><path d="M50 50C50 78 44 88 31 95H69C56 88 50 78 50 50Z"/></symbol>
+</defs></svg>
+<div id="ctl"><button id="bl" onclick="leave()" title="გასვლა" style="display:none">🚪</button><button id="bm" onclick="mute()" title="ხმა">🔊</button><button id="bf" onclick="fs()" title="სრულ ეკრანზე">⛶</button></div>
+<div id="app"></div><div id="fx"></div>
 <script>
-(() => {
-  const app = document.getElementById('app');
-  const $ = (s, r = app) => r.querySelector(s);
-  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+const $=s=>document.querySelector(s),A=$('#app'),FX=$('#fx'),SY='♠♥♦♣',RN=r=>({1:'A',11:'J',12:'Q',13:'K'})[r]||r,lan=location.protocol.startsWith('http');
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+let G=null,net=null,V=null,sel=null,grp=[],name='',seats={},lob=[],tm,code,seen=0,evc=0,seenA=0,anc=0,DG=null,DR=null,noClick=0;const hid=new Set();
+const BN=['','ბოტი ნიკა','ბოტი ანი','ბოტი გიო'],key=a=>a.map(x=>x.id).sort().join(),BOT_MS=2800;
+function mk(){let d=[];for(let s=0;s<4;s++)for(let r=1;r<=13;r++)d.push({r,s,id:s*13+r});for(let i=51;i>0;i--){let j=Math.random()*(i+1)|0;[d[i],d[j]]=[d[j],d[i]]}return d}
+/* ---- ხმა / ეკრანი ---- */
+let AC,muted=false;try{muted=localStorage.furtMute=='1'}catch(e){}
+const ac=()=>AC||(AC=new(window.AudioContext||window.webkitAudioContext)());
+function tone(f,t,d,type,v,f2){const a=ac(),o=a.createOscillator(),g=a.createGain(),T=a.currentTime+t;o.type=type||'sine';o.frequency.setValueAtTime(f,T);if(f2)o.frequency.exponentialRampToValueAtTime(f2,T+d);g.gain.setValueAtTime(v||.15,T);g.gain.exponentialRampToValueAtTime(.001,T+d);o.connect(g).connect(a.destination);o.start(T);o.stop(T+d)}
+function noise(t,d,v,fr){const a=ac(),n=a.sampleRate*d|0,b=a.createBuffer(1,n,a.sampleRate),x=b.getChannelData(0);for(let i=0;i<n;i++)x[i]=(Math.random()*2-1)*(1-i/n);
+ const s=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain();f.type='bandpass';f.frequency.value=fr||2200;g.gain.value=v||.4;s.buffer=b;s.connect(f).connect(g).connect(a.destination);s.start(a.currentTime+t)}
+const SND={put(){noise(0,.09,.7,1800);tone(180,0,.08,'sine',.12,90)},take(){noise(0,.08,.5,2600);tone(520,.02,.12,'triangle',.12);tone(780,.1,.16,'triangle',.12)},
+ deal(){for(let i=0;i<4;i++)noise(i*.09,.06,.5,3000)},ping(){tone(880,0,.14,'sine',.12);tone(1320,.1,.22,'sine',.1)},
+ win(){[523,659,784,1047].forEach((f,i)=>tone(f,i*.13,.3,'triangle',.14))},lose(){[392,330,262].forEach((f,i)=>tone(f,i*.18,.35,'sawtooth',.06))}};
+const snd=n=>{if(muted)return;try{ac().resume();SND[n]()}catch(e){}};
+function mute(){muted=!muted;try{localStorage.furtMute=muted?'1':'0'}catch(e){}ctl();snd('ping')}
+const FSE=()=>document.fullscreenElement||document.webkitFullscreenElement,canFS=document.documentElement.requestFullscreen||document.documentElement.webkitRequestFullscreen;
+function fs(){const d=document,e=d.documentElement;try{FSE()?(d.exitFullscreen||d.webkitExitFullscreen).call(d):(e.requestFullscreen||e.webkitRequestFullscreen).call(e)}catch(x){}}
+function ctl(){$('#bm').textContent=muted?'🔇':'🔊';$('#bf').textContent=FSE()?'🗗':'⛶';$('#bf').style.display=canFS?'':'none'}
+document.addEventListener('fullscreenchange',ctl);document.addEventListener('webkitfullscreenchange',ctl);ctl();
+/* ---- წესები ---- */
+function groups(c,t){if(c.r==11){let g=t.filter(x=>x.r<12);return g.length?[g]:[]}
+ if(c.r>11)return t.filter(x=>x.r==c.r).map(x=>[x]);
+ let nums=t.filter(x=>x.r<=10),need=11-c.r,n=nums.length,out=[];
+ for(let m=1;m<1<<n;m++){let s=0,g=[];for(let i=0;i<n;i++)if(m>>i&1){s+=nums[i].r;g.push(nums[i])}if(s==need)out.push(g)}return out}
+function newDeal(){G.deck=mk();G.hands=[...Array(G.n)].map(()=>G.deck.splice(0,4));G.table=G.deck.splice(0,4);G.caps=[...Array(G.n)].map(()=>[]);G.last=-1;G.deal=1;G.tot=12/G.n;G.turn=(G.dealer+1)%G.n}
+function tally(){const cnt=G.caps.map(c=>c.length),clb=G.caps.map(c=>c.filter(x=>x.s==3).length),
+ top=v=>{const m=Math.max(...v),k=v.filter(x=>x==m).length;return{m,i:m>0&&k==1?v.indexOf(m):-1,tie:m>0&&k>1}},a=top(cnt),b=top(clb);
+ return G.caps.map((c,i)=>{const d=c.some(x=>x.r==10&&x.s==2),t=c.some(x=>x.r==2&&x.s==3);
+  return{cards:cnt[i],clubs:clb[i],mc:a.i==i,mk:b.i==i,tc:a.tie&&cnt[i]==a.m,tk:b.tie&&clb[i]==b.m,d10:d,c2:t,pts:(a.i==i?2:0)+(b.i==i?1:0)+(d?1:0)+(t?1:0)}})}
+function endRound(){const left=G.table;if(G.last>=0)G.caps[G.last].push(...left);G.table=[];
+ const rows=tally();rows.forEach((r,i)=>G.scores[i]+=r.pts);
+ const m=Math.max(...G.scores),fin=m>=G.target,uniq=G.scores.filter(x=>x==m).length==1;
+ if(fin&&uniq)G.over=G.scores.indexOf(m);
+ G.phase='sum';G.sum={round:G.round,rows,left:G.last>=0?left:[],p:G.last,tie:fin&&!uniq,next:(G.dealer+1)%G.n};
+ G.msg='ხელი '+G.round+' დასრულდა: '+rows.map((r,i)=>G.names[i]+' +'+r.pts).join(' · ')}
+function nextRound(){if(!G||G.phase!='sum'||G.over!==null)return;G.dealer=(G.dealer+1)%G.n;G.round++;newDeal();G.phase='play';G.sum=null;
+ G.ann={n:++anc,k:'round'};G.msg='ხელი '+G.round+' დაიწყო · დილერი: '+G.names[G.dealer];pump()}
+function act(i,cid,ids){if(G.over!==null||G.phase!='play'||G.turn!=i)return;const c=G.hands[i].find(x=>x.id==cid);if(!c)return;
+ const g=ids.map(id=>G.table.find(x=>x.id==id));if(g.includes(undefined))return;
+ const gs=groups(c,G.table);
+ if(g.length&&!gs.some(a=>key(a)==key(g)))return;
+ if(!g.length&&c.r==11&&gs.length)return; // ვალეტს მიყავს, როცა შეუძლია
+ G.hands[i]=G.hands[i].filter(x=>x!=c);const cs=RN(c.r)+SY[c.s];
+ if(g.length){G.table=G.table.filter(x=>!g.includes(x));G.caps[i].push(c,...g);G.last=i;G.ev={n:++evc,p:i,c,g,k:1};G.msg=`${G.names[i]}: ${cs} — აიღო ${g.length+1} ბანქო`+(G.table.length?'':' · მაგიდა გასუფთავდა!')}
+ else{G.table.push(c);G.ev={n:++evc,p:i,c,g:[],k:0};G.msg=`${G.names[i]} დადო ${cs}`}
+ if(G.hands.every(h=>!h.length)){if(G.deck.length){G.hands=G.hands.map(()=>G.deck.splice(0,4));G.deal++;G.ann={n:++anc,k:'deal'};G.msg+=' · დარიგება '+G.deal+'/'+G.tot}else return endRound()}
+ G.turn=(G.turn+1)%G.n}
+/* ---- ბოტი ---- */
+function risk(t){let m=1;for(const x of t)if(x.r<=10)m|=m<<x.r;let k=0;for(let s=1;s<=10;s++)if(m>>s&1)k++;return k+(t.filter(x=>x.r<12).length>2?1.5:0)}
+const spec=x=>(x.s==3?1.5:0)+(x.r==10&&x.s==2?5:0)+(x.r==2&&x.s==3?4:0);
+function bot(i){let best=null,t=G.table;const cand=(v,c,g)=>{v+=Math.random()*.4;if(!best||v>best.v)best={v,c,g}};
+ for(const c of G.hands[i]){const gs=groups(c,t);
+  for(const g of gs){const all=[c,...g],rest=t.filter(x=>!g.includes(x));
+   let v=all.reduce((a,x)=>a+1+spec(x),0)-risk(rest)*.25+(rest.length?0:1.5);if(c.r==11&&g.length<3)v-=2.5;cand(v,c,g)}
+  if(!(c.r==11&&gs.length))cand(-risk([...t,c])*.3-spec(c)*.9-(c.r>11&&t.some(x=>x.r==c.r)?3:0)-.2*c.r*(c.r<11?0:1),c,[])}
+ act(i,best.c.id,best.g.map(x=>x.id))}
+/* ---- ნახვა და ქსელი ---- */
+const view=i=>({n:G.n,you:i,names:G.names,turn:G.turn,table:G.table,hand:G.hands[i],cnt:G.hands.map(h=>h.length),cap:G.caps.map(c=>c.length),clubs:G.caps.map(c=>c.filter(x=>x.s==3).length),sc:G.scores,deck:G.deck.length,msg:G.msg,over:G.over,target:G.target,dealer:G.dealer,ev:G.ev,round:G.round,deal:G.deal,tot:G.tot,phase:G.phase,sum:G.sum,ann:G.ann});
+function tx(to,m){fetch(`/tx?room=${net.room}&id=${net.id}`,{method:'POST',body:JSON.stringify({to,m})}).catch(()=>{})}
+function conn(room,host){const id=Math.random().toString(36).slice(2);net={id,room,host};
+ const es=new EventSource(`/ev?room=${encodeURIComponent(room)}&id=${id}${host?'&host=1':''}`);net.es=es;
+ es.onmessage=e=>{if(!net||net.es!==es)return;const d=JSON.parse(e.data),m=d.m;host?onHost(d.from,m):onCli(m)}}
+function onHost(from,m){
+ if(m.t=='ok')pub();
+ if(m.t=='err'){leave(1);alert(m.x)}
+ if(m.t=='join'){if(seats[from]!=null){tx(from,{t:'seat',you:seats[from]});return G?draw():lobby()}
+  if(G)return tx(from,{t:'err',x:'თამაში უკვე დაწყებულია'});const i=lob.findIndex((x,k)=>k&&x===null);
+  if(i<0)return tx(from,{t:'err',x:'ოთახი სავსეა'});seats[from]=i;lob[i]=m.name;tx(from,{t:'seat',you:i});lobby()}
+ if(m.t=='mv'&&G&&seats[from]!=null){act(seats[from],m.c,m.g);pump()}
+ if(m.t=='bye'){const i=seats[from];delete seats[from];if(i==null)return;if(G){G.kind[i]='bot';G.names[i]+=' (ბოტი)';pump()}else{lob[i]=null;lobby()}}}
+function onCli(m){if(m.t=='ok')tx('h',{t:'join',name});
+ if(m.t=='lobby')waitView(m.names);if(m.t=='st'){G=1;render(m.v)}if(m.t=='err'){leave(1);alert(m.x)}}
+/* ---- მენიუ ---- */
+function menu(){$('#bl').style.display='none';A.innerHTML=`<div class=box><h1>ფურთი</h1><p>თერთმეტობანა · ქართული კარტის თამაში</p>
+<input id=nm placeholder="თქვენი სახელი" maxlength=14 value="${esc(name)}"><label>მოთამაშეების რაოდენობა<select id=np><option>2<option>3<option selected>4</select></label>
+<button onclick=solo()>ბოტებთან თამაში</button><button onclick=hostLobby() ${lan?'':'disabled'}>LAN ოთახის შექმნა</button>
+${lan?'<small>ღია ოთახები ქსელში (თავისით ახლდება)</small><div id=rl class=rl><small>ვეძებ…</small></div><details><summary>კოდით შეერთება</summary><div style="display:flex;gap:8px;margin-top:8px"><input id=cd placeholder="ოთახის კოდი" maxlength=4><button onclick=joinRoom()>შეერთება</button></div></details>':''}
+<small>${lan?'':'LAN-ისთვის გაუშვი: node server.js'}</small>
+<details><summary>წესები</summary><p style="text-align:left;margin:8px 0 0"><b>სტრუქტურა.</b> თამაში ხელებისგან შედგება. ხელი იწყება 52 ბანქოთი: თითოეულს 4 ბანქო ეძლევა, მაგიდაზე 4 ღია იდება. როცა ყველას ბანქო გაუთავდება, დასტიდან ახალი <b>დარიგება</b> ხდება (ისევ 4-4, მაგიდის ბანქოები რჩება). ერთ ხელში დარიგებებია: 2 მოთამაშით — 6, 3-ით — 4, 4-ით — 3. ბოლო დარიგების დასრულებისას <b>ხელი მთავრდება</b>, ითვლება ქულები და იწყება შემდეგი ხელი; დილერი ერთით გადადის. ბანქოს შეგიძლია გადაათრიო მაგიდაზე: ცარიელ ადგილას — დადება, მაგიდის ბანქოზე — აღება (ვალეტი მაგიდის ნებისმიერ ადგილას იღებს ყველაფერს). ზედა პანელზე ყოველთვის ჩანს, რომელ ხელსა და დარიგებაზე ხართ.</p><p style="text-align:left;margin:8px 0 0">რიცხვიანი ბანქო (A=1) იღებს მაგიდის ბანქოებს, რომელთა ჯამი მასთან ერთად 11-ია. ქალი იღებს ქალს, მეფე — მეფეს. ვალეტი (ფურთი) იღებს ყველაფერს, გარდა ქალებისა და მეფეებისა და თუ შეუძლია, აუცილებლად იღებს. აღება (ვალეტის გარდა) არჩევითია. ხელის ბოლოს მაგიდაზე დარჩენილი ბანქოები ბოლო მღებელს ერგება. ქულები: ყველაზე მეტი ბანქო 2, ყველაზე მეტი ჯვარი 1, ♦10 — 1, ♣2 — 1. ფრე — არავის. მიზანი 11. <b>D</b> — დილერი, რომელიც ყოველთვის ბოლო თამაშობს.</p></details></div>`;rooms()}
+const nm0=()=>name=($('#nm').value.trim()||'მოთამაშე');
+function startG(kind,names){seen=0;seenA=0;hid.clear();FX.innerHTML='';G={ev:null,ann:{n:++anc,k:'round'},round:1,phase:'play',sum:null,n:kind.length,kind,names,scores:Array(kind.length).fill(0),dealer:Math.random()*kind.length|0,target:11,over:null,msg:'წარმატებას გისურვებთ!'};newDeal();G.msg+=' დილერი: '+names[G.dealer];V=null;snd('deal');pub();pump()}
+function solo(){nm0();const n=+$('#np').value;startG(Array.from({length:n},(_,i)=>i?'bot':'me'),Array.from({length:n},(_,i)=>i?BN[i]:name))}
+function hostLobby(){nm0();const n=+$('#np').value;code=String(1000+Math.random()*9000|0);lob=Array(n).fill(null);lob[0]=name;conn(code,true);lobby()}
+function lobby(){A.innerHTML=`<div class=box><h1>ოთახი</h1><p>სხვებმა გახსნან <b>${esc(location.host)}</b> — შენი ოთახი მენიუში თავისით გამოჩნდება (კოდი: ${code})</p>
+${lob.map((x,i)=>`<div class=seat>${esc(x||BN[i]+' (ბოტი)')}</div>`).join('')}<button onclick=startHost()>თამაშის დაწყება</button><button class=sec onclick=leave(1)>გასვლა</button></div>`;
+ pub();Object.keys(seats).forEach(id=>tx(id,{t:'lobby',names:lob}))}
+function startHost(){startG(lob.map((x,i)=>i==0?'me':x===null?'bot':'net'),lob.map((x,i)=>x||BN[i]))}
+function joinRoom(r){nm0();r=(typeof r=='string'?r:'')||($('#cd')?$('#cd').value.trim():'');if(r){conn(r,false);waitView([])}}
+function waitView(n){A.innerHTML=`<div class=box><h1>ფურთი</h1><p>ელოდები ჰოსტს...</p>${n.map(x=>`<div class=seat>${esc(x||'ბოტი')}</div>`).join('')}<button class=sec onclick=leave(1)>გასვლა</button></div>`}
+/* ---- თამაში ---- */
+function pump(){draw();if(G.over!==null||G.phase!='play'||G.kind[G.turn]!='bot')return;clearTimeout(tm);tm=setTimeout(()=>{bot(G.turn);pump()},BOT_MS)}
+function draw(){render(view(0));if(net&&net.host)for(const[id,i]of Object.entries(seats))tx(id,{t:'st',v:view(i)})}
+/* ბანქოს დახატვა */
+const su=(s,c)=>`<svg class="${c||''}" viewBox="0 0 100 100" fill="currentColor"><use href="#s${s}"/></svg>`;
+const L=36,Rr=64,C=50,six=[[L,17],[Rr,17],[L,50],[Rr,50],[L,83],[Rr,83]];
+const PIP=[0,[[C,50]],[[C,17],[C,83]],[[C,17],[C,50],[C,83]],[[L,17],[Rr,17],[L,83],[Rr,83]],[[L,17],[Rr,17],[C,50],[L,83],[Rr,83]],six,[...six,[C,33.5]],[...six,[C,33.5],[C,66.5]],
+ [[L,17],[Rr,17],[L,38.7],[Rr,38.7],[C,50],[L,61.3],[Rr,61.3],[L,83],[Rr,83]],[[L,17],[Rr,17],[C,27.5],[L,38.7],[Rr,38.7],[L,61.3],[Rr,61.3],[C,72.5],[L,83],[Rr,83]]];
+const cd=(c,cls,x)=>{const ix=`${RN(c.r)}${su(c.s)}`;return `<div class="c ${c.s==1||c.s==2?'red':''} ${cls}" data-id=${c.id} ${x}><b class=k>${ix}</b><b class="k z">${ix}</b>`+
+ (c.r>10?`<div class=fc>${su(c.s)}<span>${RN(c.r)}</span>${su(c.s,'r')}</div>`:PIP[c.r].map(([a,y])=>`<svg class="pp ${y>50?'r':''} ${c.r==1?'big':''}" style="left:${a}%;top:${y}%" viewBox="0 0 100 100" fill="currentColor"><use href="#s${c.s}"/></svg>`).join(''))+`</div>`};
+function render(v){$('#bl').style.display='';if(DG){DG.gh&&DG.gh.remove();DG.lb&&DG.lb.remove();DG=null}
+ const prev=V,E=v.ev&&v.ev.n!==seen?v.ev:null,old={};
+ if(E&&prev)A.querySelectorAll('[data-id]').forEach(e=>old[e.dataset.id]=e.getBoundingClientRect());
+ if(DR&&E){old[DR.id]=DR.rect;DR=null}
+ V=v;const live=v.phase=='play',mine=v.turn==v.you&&live,late=E&&v.phase=='sum'?(E.k?1500:700)+(v.sum.left.length?1000:0)+300:0,
+  dots=Array.from({length:v.tot},(_,k)=>`<i class="${k<v.deal-(live?1:0)?'d':k==v.deal-1?'a':''}"></i>`).join('');
+ if(!mine){sel=null;grp=[]}if(!v.hand.some(c=>c.id==sel))sel=null;grp=grp.filter(id=>v.table.some(c=>c.id==id));
+ const c=v.hand.find(x=>x.id==sel),g=grp.map(id=>v.table.find(x=>x.id==id)).filter(Boolean),gs=mine&&c?groups(c,v.table):[],hint=new Set(gs.flat().map(x=>x.id));
+ const ok=mine&&c&&g.length&&gs.some(a=>key(a)==key(g)),canPut=mine&&c&&!(c.r==11&&gs.length);
+ const posOf=i=>{const r=(i-v.you+v.n)%v.n;return v.n==2?'top':v.n==3?(r==1?'left':'right'):['','left','top','right'][r]};
+ const seat=(i,cls)=>{const t=v.turn==i&&live;return `<div class="seat ${cls} ${t?'turn':''}" data-i=${i}>${v.dealer==i?'<span class=dl title="დილერი">D</span>':''}<div class=nm>${esc(v.names[i])}</div>`+
+  (i==v.you?'':`<div class=backs>${'<s></s>'.repeat(v.cnt[i])}</div>`)+`<div class=inf><span class=pile title="აღებული ბანქო">${v.cap[i]}</span><span title="ჯვარი">♣${v.clubs[i]}</span><span>ქულა <b>${v.sc[i]}</b></span></div>`+
+  (t?`<small class=th>${i==v.you?'შენი ჯერია!':'ფიქრობს…'}</small>`:'')+`</div>`};
+ A.innerHTML=`<div class=game><div class=bar><span>${live?`ჯერი: <b>${esc(v.names[v.turn])}</b>`:'<b>ხელი დასრულდა</b>'}</span><span class=prog title="ხელი და დარიგება">ხელი <b>${v.round}</b> <span class=dots>${dots}</span> დარიგება <b>${v.deal}/${v.tot}</b></span><span class=dk id=dk title="დასტაში დარჩენილი ბანქო"><s></s>${v.deck}</span><span>მიზანი ${v.target}</span></div>
+<div class=arena>${v.names.map((n,i)=>i==v.you?'':seat(i,'pos-'+posOf(i))).join('')}
+<div class="table ${mine?'mine':''}">${v.table.map(t=>cd(t,(grp.includes(t.id)?'on ':hint.has(t.id)?'hint ':'')+(hid.has(t.id)?'hd':''),`onclick=tg(${t.id})`)).join('')||'<em style="opacity:.6">მაგიდა ცარიელია</em>'}</div></div>
+<div class=msg>${esc(v.msg||'')}</div>
+<div>${seat(v.you,'me')}<div class=hand>${v.hand.map(h=>cd(h,sel==h.id?'sel':'',`onclick=pk(${h.id})`)).join('')}</div>
+<div class=btns><button onclick=go(1) ${ok?'':'disabled'}>აიღე</button><button onclick=go(0) ${canPut?'':'disabled'}>დადე</button></div></div>
+${v.phase=='sum'?summary(v,late):''}</div>`;
+ if(E){seen=E.n;if(prev){anim(E,old,v);sweep(E,old,v)}}
+ const AN=v.ann&&v.ann.n!==seenA?v.ann:null;
+ if(AN){seenA=AN.n;const d=E?(E.k?1500:750):0,rd=AN.k=='round',
+   bt=rd?['ხელი '+v.round,'დარიგება 1/'+v.tot+'. დილერი: '+v.names[v.dealer]+', იწყებს: '+v.names[(v.dealer+1)%v.n]]
+   :['დარიგება '+v.deal+'/'+v.tot,v.deal==v.tot?'ბოლო დარიგებაა — მის შემდეგ ხელი მთავრდება':'ყველას 4-4 ბანქო დაურიგდა. დასტაში დარჩა '+v.deck];
+   dealFx(d,rd);setTimeout(()=>V&&banner(bt[0],bt[1]),d)}
+ if(prev){if(v.cnt.reduce((a,b)=>a+b)>prev.cnt.reduce((a,b)=>a+b))setTimeout(()=>snd('deal'),E?1400:0);
+  if(live&&v.turn==v.you&&prev.turn!=v.you)setTimeout(()=>snd('ping'),E?1300:0);
+  if(prev.phase!='sum'&&v.phase=='sum')setTimeout(()=>snd(v.over===null?'ping':v.over==v.you?'win':'lose'),late)}}
+/* ანიმაცია: აღებისას ხელის და მაგიდის ბანქოები ერთდროულად მიდიან გაერთიანების წერტილში, მერე ერთად — მღებელთან */
+function ghost(c,w,l,t,cls,z){const d=document.createElement('div');d.innerHTML=cd(c,'gh '+(cls||''),'');const e=d.firstChild;e.style.cssText=`--w:${w}px;position:absolute;left:${l}px;top:${t}px;margin:0;z-index:${z||1}`;FX.appendChild(e);return e}
+function anim(E,old,v){
+ const seatEl=i=>A.querySelector(`.seat[data-i="${i}"]`),ctr=r=>({x:r.left+r.width/2,y:r.top+r.height/2});
+ const sr=seatEl(E.p)?.getBoundingClientRect(),
+  src=id=>old[id]?{...ctr(old[id]),w:old[id].width}:sr?{...ctr(sr),w:34}:{x:innerWidth/2,y:innerHeight/2,w:34};
+ if(!E.k){
+  const el=A.querySelector(`.table [data-id="${E.c.id}"]`);if(!el)return;
+  const id=E.c.id,r=el.getBoundingClientRect(),s=src(id),gh=ghost(E.c,r.width,r.left,r.top);hid.add(id);el.classList.add('hd');snd('put');
+  const done=()=>{hid.delete(id);gh.remove();A.querySelector(`.table [data-id="${id}"]`)?.classList.remove('hd')};
+  const a=gh.animate([{transform:`translate(${s.x-ctr(r).x}px,${s.y-ctr(r).y}px) scale(${s.w/r.width})`},{transform:'none'}],{duration:700,easing:'cubic-bezier(.2,.8,.3,1)'});
+  a.onfinish=done;setTimeout(done,1500);return}
+ const cards=[...E.g,E.c],w=old[E.g[0]?.id]?.width||84,h=w*1.4,tb=A.querySelector('.table').getBoundingClientRect(),
+  pl=seatEl(E.p)?.querySelector('.pile')?.getBoundingClientRect(),P=pl?ctr(pl):ctr(tb),T=ctr(tb),side=v.n==2?'top':(['bottom','left','top','right'][(E.p-v.you+v.n)%v.n]||'top');
+ // შეკრების წერტილი — მაგიდის იმ კიდესთან, საიდანაც მღებელი ზის (ცენტრში დარჩენილ ბანქოებს არ ედება)
+ const M=side=='bottom'?{x:T.x,y:tb.bottom-h*.55}:side=='top'?{x:T.x,y:tb.top+h*.55}:side=='left'?{x:tb.left+w*1.3,y:T.y}:{x:tb.right-w*1.3,y:T.y};
+ snd('put');setTimeout(()=>snd('take'),950);
+ const gh=cards.map((c,i)=>{const sx=M.x+(i-(cards.length-1)/2)*w*.32,s=src(c.id),e=ghost(c,w,sx-w/2,M.y-h/2,'cap',i+1);
+  e.animate([{transform:`translate(${s.x-sx}px,${s.y-M.y}px) scale(${s.w/w})`,offset:0},{transform:'none',offset:.4,easing:'ease-out'},{transform:'none',offset:.64,easing:'ease-in'},
+   {transform:`translate(${P.x-sx}px,${P.y-M.y}px) scale(.3)`,opacity:.25,offset:1}],{duration:1500,easing:'cubic-bezier(.3,.8,.3,1)'});return e});
+ setTimeout(()=>{gh.forEach(e=>e.remove());const p=seatEl(E.p)?.querySelector('.pile');p&&(p.classList.add('pulse'),setTimeout(()=>p.classList.remove('pulse'),600))},1520)}
+function summary(v,late){const s=v.sum,fin=v.over!==null;
+ const rows=s.rows.map((r,i)=>`<tr class="${fin&&v.over==i?'win':''}"><td><div class=nm>${esc(v.names[i])}</div></td><td class="${r.mc?'g':''}">${r.cards}${r.mc?'<sup>+2</sup>':r.tc?'<sup>ფრე</sup>':''}</td><td class="${r.mk?'g':''}">${r.clubs}${r.mk?'<sup>+1</sup>':r.tk?'<sup>ფრე</sup>':''}</td><td class="${r.d10?'g':''}">${r.d10?'✓':'–'}</td><td class="${r.c2?'g':''}">${r.c2?'✓':'–'}</td><td class=g>+${r.pts}</td><td><b>${v.sc[i]}</b></td></tr>`).join('');
+ return `<div class="ov ${late?'late':''}" ${late?`style="--dl:${late}ms"`:''}><div class=box><h1>${fin?'🏆':'ხელი '+s.round}</h1>
+<p style="font-size:${fin?20:16}px">${fin?`<b>${esc(v.names[v.over])}</b> იმარჯვებს!`:'დასრულდა'}</p>
+<table class=sm><tr><th></th><th>ბანქო</th><th>♣</th><th>10<span class=rd>♦</span></th><th>2♣</th><th>ქულა</th><th>სულ</th></tr>${rows}</table>
+${s.left.length&&s.p>=0?`<p class=note>მაგიდაზე დარჩენილი ${s.left.length} ბანქო ერგო: <b>${esc(v.names[s.p])}</b></p>`:''}
+${s.tie?'<p class=note>მიზანს რამდენიმე მოთამაშე მიაღწია და ფრეა — თამაში გრძელდება</p>':''}
+${fin?'':`<p class=note>შემდეგ ხელში დილერია <b>${esc(v.names[s.next])}</b>, იწყებს <b>${esc(v.names[(s.next+1)%v.n])}</b></p>`}
+${v.you==0?`<button onclick=${fin?'again()':'nextRound()'}>${fin?'ახალი თამაში':'შემდეგი ხელი'}</button>`:'<small>ელოდე ჰოსტს…</small>'}</div></div>`}
+function banner(t,x){const e=document.createElement('div');e.className='ban';e.innerHTML=`<b>${esc(t)}</b>${x?`<span>${esc(x)}</span>`:''}`;FX.appendChild(e);
+ e.animate([{opacity:0,transform:'translate(-50%,-35%)'},{opacity:1,transform:'translate(-50%,-50%)',offset:.12},{opacity:1,transform:'translate(-50%,-50%)',offset:.8},{opacity:0,transform:'translate(-50%,-62%)'}],{duration:2800,easing:'ease-out'}).onfinish=()=>e.remove();setTimeout(()=>e.remove(),3200)}
+/* დარიგების ანიმაცია: ბანქოები დასტიდან მიფრინავს ყველასთან (ახალ ხელზე — მაგიდაზეც) */
+function dealFx(d,tb){const k=$('#dk s'),r=k&&k.getBoundingClientRect();if(!r)return;const x=r.left+r.width/2,y=r.top+r.height/2;let i=0;
+ A.querySelectorAll('.hand .c,.backs s'+(tb?',.table .c':'')).forEach(e=>{const b=e.getBoundingClientRect();
+  e.animate([{transform:`translate(${x-b.left-b.width/2}px,${y-b.top-b.height/2}px) scale(.35)`,opacity:0},{opacity:1,offset:.25},{transform:'none',opacity:1}],{duration:520,delay:d+i++*45,easing:'cubic-bezier(.2,.8,.3,1)',fill:'backwards'})})}
+/* ხელის ბოლოს მაგიდაზე დარჩენილი ბანქოები მიფრინავს ბოლო მღებელთან */
+function sweep(E,old,v){const s=v.sum;if(v.phase!='sum'||!s||!s.left.length||s.p<0)return;
+ const pl=A.querySelector(`.seat[data-i="${s.p}"] .pile`)?.getBoundingClientRect();if(!pl)return;
+ const P={x:pl.left+pl.width/2,y:pl.top+pl.height/2},B=E.k?1500:700;
+ s.left.forEach((c,i)=>{const r=old[c.id];if(!r)return;const e=ghost(c,r.width,r.left,r.top,'',i+1),x=r.left+r.width/2,y=r.top+r.height/2,own=c.id==E.c.id&&!E.k;
+  const a=e.animate([{transform:'none'},{transform:`translate(${P.x-x}px,${P.y-y}px) scale(.3)`,opacity:.25}],{duration:900,delay:own?0:B,easing:'ease-in',fill:'both'});
+  a.onfinish=()=>e.remove();setTimeout(()=>e.remove(),B+1300)});
+ setTimeout(()=>{const p=A.querySelector(`.seat[data-i="${s.p}"] .pile`);p&&(p.classList.add('pulse'),setTimeout(()=>p.classList.remove('pulse'),600))},B+900)}
+function pk(id){if(Date.now()<noClick)return;if(!V||V.turn!=V.you||V.over!==null||V.phase!='play')return;if(sel==id){sel=null;grp=[];return render(V)}sel=id;const c=V.hand.find(x=>x.id==id);grp=c.r==11?V.table.filter(x=>x.r<12).map(x=>x.id):[];render(V)}
+function tg(id){if(sel==null||V.turn!=V.you)return;const c=V.hand.find(x=>x.id==sel);if(c&&c.r==11)return;grp=grp.includes(id)?grp.filter(x=>x!=id):[...grp,id];render(V)}
+function submit(c,g){sel=null;grp=[];if(!net||net.host){act(0,c,g);pump()}else tx('h',{t:'mv',c,g})}
+function go(take){const c=sel;if(c==null)return;submit(c,take?grp:[])}
+function again(){startG(G.kind,G.names)}
+document.addEventListener('pointerdown',()=>{try{AC&&AC.resume()}catch(e){}});
+/* ---- drag & drop ---- */
+function plan(c,x,y){const gs=groups(c,V.table),tb=A.querySelector('.table').getBoundingClientRect();
+ if(x<tb.left-20||x>tb.right+20||y<tb.top-20||y>tb.bottom+20)return{m:'none'};
+ const el=document.elementsFromPoint(x,y).find(e=>e.matches&&e.matches('.table .c')),t=el&&+el.dataset.id;
+ if(c.r==11)return gs.length?{m:'take',g:gs[0].map(z=>z.id)}:{m:'put'};
+ if(t){const m=gs.filter(g=>g.some(z=>z.id==t));return m.length==1?{m:'take',g:m[0].map(z=>z.id)}:m.length?{m:'amb',t}:{m:'none'}}
+ return{m:'put'}}
+document.addEventListener('pointerdown',e=>{
+ const el=e.target.closest&&e.target.closest('.hand .c');
+ if(!el||!V||V.turn!=V.you||V.phase!='play'||V.over!==null||(e.pointerType=='mouse'&&e.button))return;
+ const c=V.hand.find(x=>x.id==el.dataset.id);if(c)DG={id:c.id,c,el,x0:e.clientX,y0:e.clientY,on:0,pid:e.pointerId}});
+function dragStart(){const d=DG,r=d.el.getBoundingClientRect();d.on=1;d.ox=d.x0-r.left;d.oy=d.y0-r.top;d.r=r;DR=null;
+ sel=d.id;grp=d.c.r==11?V.table.filter(x=>x.r<12).map(x=>x.id):[];d.hint=new Set(groups(d.c,V.table).flat().map(x=>x.id));
+ d.gh=ghost(d.c,r.width,r.left,r.top,'dg',5);d.el.style.opacity='.25';
+ d.lb=document.createElement('div');d.lb.className='dlab';d.lb.style.display='none';FX.appendChild(d.lb);
+ A.querySelectorAll('.table .c').forEach(t=>{t.classList.remove('on');t.classList.toggle('hint',d.hint.has(+t.dataset.id))})}
+function dragMove(e){const d=DG,gl=e.clientX-d.ox,gt=e.clientY-d.oy;d.gh.style.left=gl+'px';d.gh.style.top=gt+'px';
+ const p=plan(d.c,e.clientX,e.clientY),on=new Set(p.m=='take'?p.g:p.m=='amb'?[p.t]:[]),tb=A.querySelector('.table');
+ A.querySelectorAll('.table .c').forEach(t=>{const id=+t.dataset.id;t.classList.toggle('on',on.has(id));t.classList.toggle('hint',d.hint.has(id)&&!on.has(id))});
+ tb.classList.toggle('over',p.m=='put');
+ const L=d.lb;L.style.display=p.m=='none'?'none':'';L.textContent=p.m=='take'?'აიღე '+(p.g.length+1)+' ბანქო':p.m=='put'?'დადე':'აირჩიე ბანქოები';
+ L.style.left=e.clientX+'px';L.style.top=(gt-8)+'px'}
+function dragEnd(e,cancel){const d=DG;DG=null;if(!d||!d.on)return;noClick=Date.now()+350;
+ A.querySelector('.table')?.classList.remove('over');d.lb.remove();
+ const p=cancel?{m:'none'}:plan(d.c,e.clientX,e.clientY),r=d.gh.getBoundingClientRect();
+ if(p.m=='take'||p.m=='put'){d.gh.remove();DR={id:d.id,rect:{left:r.left,top:r.top,width:r.width,height:r.height}};submit(d.id,p.m=='take'?p.g:[]);
+  setTimeout(()=>{if(DR&&DR.id==d.id){DR=null;V&&render(V)}},1500);return}
+ if(p.m=='amb'){d.gh.remove();sel=d.id;grp=[p.t];return render(V)}
+ let done=0;const fin=()=>{if(done++)return;d.gh.remove();V&&render(V)};
+ const a=d.gh.animate([{transform:'scale(1.06)'},{transform:`translate(${d.r.left-r.left}px,${d.r.top-r.top}px)`}],{duration:220,easing:'ease-out'});
+ a.onfinish=fin;setTimeout(fin,400)}
+document.addEventListener('pointermove',e=>{if(!DG||e.pointerId!=DG.pid)return;
+ if(!DG.on){if(Math.hypot(e.clientX-DG.x0,e.clientY-DG.y0)<8)return;dragStart()}dragMove(e)});
+document.addEventListener('pointerup',e=>{if(DG&&e.pointerId==DG.pid)dragEnd(e)});
+document.addEventListener('pointercancel',e=>{if(DG&&e.pointerId==DG.pid)dragEnd(e,1)});
 
-  let session = null;       // { room, pid }
-  let state = null;         // სერვერის უახლესი მდგომარეობა
-  let es = null;            // EventSource
-  let clockOffset = 0;      // serverNow - Date.now()
-  let screenKey = '';       // რომელი ეკრანია ახლა დახატული
-  let drafts = [];          // მიმდინარე რაუნდის პასუხები
-  let submittedRound = -1;  // რომელი რაუნდის პასუხები გავაგზავნეთ
-  let tickTimer = null;
-
-  const saved = sessionStorage.getItem('qalaqobana');
-  if (saved) { try { session = JSON.parse(saved); } catch {} }
-
-  async function api(path, body) {
-    try {
-      const r = await fetch('/api/' + path, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...body, room: session?.room, pid: session?.pid }),
-      });
-      const data = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(data.error || 'შეცდომა');
-      return data;
-    } catch (e) {
-      if (e instanceof TypeError) throw new Error('სერვერთან კავშირი ვერ დამყარდა');
-      throw e;
-    }
-  }
-
-  function connect() {
-    if (es) es.close();
-    es = new EventSource(`/api/events?room=${encodeURIComponent(session.room)}&pid=${encodeURIComponent(session.pid)}`);
-    es.onmessage = (ev) => {
-      state = JSON.parse(ev.data);
-      clockOffset = state.serverNow - Date.now();
-      render();
-    };
-    es.onerror = () => {
-      // 404 → EventSource CLOSED: ოთახი ან მოთამაშე აღარ არსებობს
-      if (es.readyState === EventSource.CLOSED) leave('ოთახი აღარ არსებობს');
-    };
-  }
-
-  function leave(msg) {
-    if (es) es.close();
-    es = null; session = null; state = null; screenKey = '';
-    sessionStorage.removeItem('qalaqobana');
-    history.replaceState(null, '', location.pathname);
-    renderHome(msg || '');
-  }
-
-  const serverNow = () => Date.now() + clockOffset;
-  const me = () => state.players.find((p) => p.id === session.pid);
-  const isHost = () => state.host === session.pid;
-
-  // ---------- მთავარი ეკრანი ----------
-  function renderHome(msg = '') {
-    screenKey = 'home';
-    const preset = new URLSearchParams(location.search).get('room') || '';
-    app.innerHTML = `
-      <h1>ქალაქობანა</h1>
-      <p class="sub">ასო, ექვსი გრაფა და „სტოპი“ — ვინ უფრო სწრაფი და გამომგონებელია?</p>
-      <div class="sheet">
-        <label class="f" for="name">შენი სახელი</label>
-        <input type="text" id="name" maxlength="16" autocomplete="nickname" value="${esc(localStorage.getItem('qq-name') || '')}">
-      </div>
-      <div class="sheet">
-        <h2>ახალი თამაში</h2>
-        <button id="create">ოთახის შექმნა</button>
-      </div>
-      <div class="sheet">
-        <h2>შეუერთდი მეგობრებს</h2>
-        <div class="row">
-          <div>
-            <label class="f" for="code">ოთახის კოდი</label>
-            <input type="text" id="code" maxlength="4" autocapitalize="characters" value="${esc(preset.toUpperCase())}">
-          </div>
-          <button id="join" class="ghost">შესვლა</button>
-        </div>
-      </div>
-      <p class="err" id="err">${esc(msg)}</p>
-      <details class="sheet"><summary><b>თამაშის წესები</b></summary>
-        <p style="margin-top:10px">თითო რაუნდზე დაიძახება ერთი ასო. თითოეულმა მოთამაშემ უნდა შეავსოს ექვსივე გრაფა სიტყვით, რომელიც ამ ასოზე იწყება.</p>
-        <p>ვინც პირველი შეავსებს, აჭერს „სტოპს“ — დანარჩენებს რჩებათ 10 წამი დასასრულებლად.</p>
-        <p>ქულები: უნიკალური სიტყვა — <b>10</b>, სხვასაც იგივე რომ დაუწერია — <b>5</b>, ცარიელი ან არასწორ ასოზე დაწყებული — <b>0</b>.</p>
-      </details>`;
-    const nameEl = $('#name');
-    const err = (m) => { $('#err').textContent = m; };
-    const nm = () => {
-      const v = nameEl.value.trim();
-      if (!v) { err('ჯერ სახელი ჩაწერე'); nameEl.focus(); return null; }
-      localStorage.setItem('qq-name', v);
-      return v;
-    };
-    $('#create').onclick = async () => {
-      const name = nm(); if (!name) return;
-      try { session = await api('create', { name }); start(); } catch (e) { err(e.message); }
-    };
-    $('#join').onclick = async () => {
-      const name = nm(); if (!name) return;
-      const room = $('#code').value.trim().toUpperCase();
-      if (room.length !== 4) { err('კოდი 4 სიმბოლოსგან შედგება'); return; }
-      try { session = await api('join', { name, room }); start(); } catch (e) { err(e.message); }
-    };
-  }
-
-  function start() {
-    sessionStorage.setItem('qalaqobana', JSON.stringify(session));
-    history.replaceState(null, '', '?room=' + session.room);
-    connect();
-  }
-
-  // ---------- რენდერი ----------
-  function render() {
-    if (!state) return;
-    clearInterval(tickTimer);
-    const ph = state.phase;
-    if (ph === 'lobby') return renderLobby();
-    if (ph === 'playing' || ph === 'countdown') return renderPlay();
-    if (ph === 'collecting') return renderCollecting();
-    if (ph === 'results' || ph === 'finished') return renderResults();
-  }
-
-  function playersList() {
-    return `<ul class="players">${state.players.map((p) => `
-      <li class="${p.connected ? '' : 'off'}">
-        <span>${esc(p.name)}${p.id === state.host ? '<span class="tag">მასპინძელი</span>' : ''}${p.id === session.pid ? '<span class="tag">შენ</span>' : ''}${p.connected ? '' : '<span class="tag">გამოსულია</span>'}</span>
-        <span>${p.score}</span>
-      </li>`).join('')}</ul>`;
-  }
-
-  function renderLobby() {
-    const key = 'lobby:' + state.players.length + ':' + state.host + ':' + state.players.map((p) => p.connected).join('');
-    if (screenKey === 'lobby') {
-      // შევინარჩუნოთ რაუნდების რაოდენობა ველში
-      const keep = $('#rounds')?.value;
-      draw(); if (keep && $('#rounds')) $('#rounds').value = keep;
-    } else draw();
-    screenKey = 'lobby';
-
-    function draw() {
-      const link = location.origin + '/?room=' + state.code;
-      app.innerHTML = `
-        <h1>ქალაქობანა</h1>
-        <p class="sub">გაუგზავნე მეგობრებს ეს კოდი ან ბმული:</p>
-        <p><span class="code">${esc(state.code)}</span></p>
-        <p><button class="ghost" id="copy">ბმულის კოპირება</button> <span class="hint" id="copied"></span></p>
-        <div class="sheet"><h2>მოთამაშეები (${state.players.length})</h2>${playersList()}</div>
-        ${isHost() ? `
-          <div class="sheet row">
-            <div><label class="f" for="rounds">რაუნდების რაოდენობა</label>
-            <input type="number" id="rounds" min="1" max="15" value="5"></div>
-            <button id="go">თამაშის დაწყება</button>
-          </div>` : `<p class="hint">ველოდებით მასპინძელს, სანამ თამაშს დაიწყებს…</p>`}
-        <p class="err" id="err"></p>
-        <p><button class="ghost" id="leave">გასვლა</button></p>`;
-      $('#copy').onclick = async () => {
-        try { await navigator.clipboard.writeText(link); $('#copied').textContent = 'დაკოპირდა'; }
-        catch { $('#copied').textContent = link; }
-      };
-      $('#leave').onclick = () => leave();
-      const go = $('#go');
-      if (go) go.onclick = async () => {
-        try { await api('start', { rounds: $('#rounds').value }); } catch (e) { $('#err').textContent = e.message; }
-      };
-    }
-  }
-
-  function renderPlay() {
-    const key = 'play:' + state.round;
-    if (screenKey !== key) {
-      screenKey = key;
-      drafts = state.categories.map(() => '');
-      submittedRound = -1;
-      app.innerHTML = `
-        <div class="roundbar">
-          <h2>რაუნდი ${state.round} / ${state.totalRounds}</h2>
-          <span class="sub" id="who"></span>
-        </div>
-        <div class="bigletter" aria-label="ასო ${esc(state.letter)}">${esc(state.letter)}</div>
-        <div class="sheet" id="fields">
-          ${state.categories.map((c, i) => `
-            <div class="cat" data-i="${i}">
-              <span>${esc(c)}</span>
-              <input type="text" maxlength="40" autocomplete="off" aria-label="${esc(c)}" data-i="${i}">
-            </div>`).join('')}
-        </div>
-        <div id="cd" class="countdown hidden"></div>
-        <div class="stopwrap">
-          <button class="stamp" id="stop" disabled>სტოპ</button>
-          <span class="hint" id="hint">შეავსე ყველა გრაფა, რომ „სტოპის“ დაჭერა შეგეძლოს</span>
-        </div>
-        <p class="err" id="err"></p>`;
-      const inputs = [...app.querySelectorAll('#fields input')];
-      inputs.forEach((inp) => {
-        inp.addEventListener('input', () => { drafts[+inp.dataset.i] = inp.value; refreshStop(); });
-        inp.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter') {
-            const next = inputs[+inp.dataset.i + 1];
-            if (next) next.focus(); else if (!$('#stop').disabled) $('#stop').click();
-          }
-        });
-      });
-      inputs[0].focus();
-      $('#stop').onclick = async () => {
-        $('#stop').disabled = true;
-        try { await api('stop', { answers: drafts }); }
-        catch (e) { $('#err').textContent = e.message; refreshStop(); }
-      };
-    }
-
-    refreshStop();
-    updatePlayDynamic();
-    tickTimer = setInterval(updatePlayDynamic, 100);
-  }
-
-  function refreshStop() {
-    const stop = $('#stop'); if (!stop) return;
-    const filled = drafts.length && drafts.every((d) => d.trim().length > 0);
-    stop.disabled = !(state.phase === 'playing' && filled);
-    $('#hint').classList.toggle('hidden', state.phase !== 'playing');
-    // ხაზგასმა გრაფებზე, რომლებიც არასწორ ასოზე იწყება (მხოლოდ მინიშნება, არა ბლოკი)
-    app.querySelectorAll('#fields .cat').forEach((row) => {
-      const v = (drafts[+row.dataset.i] || '').trim().toLowerCase();
-      row.classList.toggle('bad', v.length > 0 && v[0] !== state.letter);
-    });
-  }
-
-  function updatePlayDynamic() {
-    if (!state || !$('#cd')) return;
-    const cd = $('#cd');
-    const inputs = app.querySelectorAll('#fields input');
-    if (state.phase === 'countdown') {
-      const stopper = state.players.find((p) => p.id === state.stopper);
-      const left = Math.max(0, state.endsAt - serverNow());
-      const total = 10000;
-      cd.classList.remove('hidden');
-      cd.innerHTML = `<div>${stopper && stopper.id === session.pid ? 'შენ დააჭირე სტოპს!' : esc(stopper ? stopper.name : 'ვიღაცამ') + ' დააჭირა სტოპს!'} დაასრულე სწრაფად:</div>
-        <div class="time">${Math.ceil(left / 1000)}</div>
-        <div class="bar"><i style="width:${Math.min(100, (left / total) * 100)}%"></i></div>`;
-      if (state.stopper === session.pid) inputs.forEach((i) => (i.readOnly = true));
-    } else {
-      cd.classList.add('hidden');
-    }
-    refreshStop();
-  }
-
-  function renderCollecting() {
-    // ავტომატურად გავგზავნოთ ჩვენი პასუხები (ერთხელ თითო რაუნდზე)
-    if (submittedRound !== state.round) {
-      submittedRound = state.round;
-      api('submit', { answers: drafts }).catch(() => {});
-    }
-    screenKey = 'collecting';
-    app.innerHTML = `
-      <h2>რაუნდი ${state.round} / ${state.totalRounds}</h2>
-      <div class="bigletter" style="font-size:90px">${esc(state.letter)}</div>
-      <p class="sub">ვითვლით ქულებს…</p>`;
-  }
-
-  function renderResults() {
-    const r = state.results; if (!r) return;
-    const fin = state.phase === 'finished';
-    screenKey = 'results:' + state.round + ':' + state.phase;
-    const cats = state.categories;
-    const rows = r.rows;
-    const ranking = [...rows].sort((a, b) => b.score - a.score);
-
-    app.innerHTML = `
-      <div class="roundbar"><h2>რაუნდი ${state.round} / ${state.totalRounds} — ასო „${esc(r.letter)}“</h2></div>
-      <div class="tablewrap"><table>
-        <thead><tr><th>მოთამაშე</th>${cats.map((c) => `<th>${esc(c)}</th>`).join('')}<th class="total">რაუნდი</th><th class="total">სულ</th></tr></thead>
-        <tbody>${rows.map((row) => `<tr>
-          <th>${esc(row.name)}${row.id === session.pid ? '<span class="tag">შენ</span>' : ''}</th>
-          ${row.cells.map((c) => `<td class="${c.status}"><span class="txt">${esc(c.text) || '—'}</span><span class="pts">+${c.pts}</span></td>`).join('')}
-          <td class="total">+${row.total}</td><td class="total">${row.score}</td></tr>`).join('')}
-        </tbody></table></div>
-      <div class="legend">
-        <span><b>+10</b> უნიკალური</span><span><b class="s">+5</b> განმეორებული</span><span><b>+0</b> ცარიელი ან არასწორი ასო</span>
-      </div>
-      ${fin ? `
-        <div class="sheet" style="margin-top:22px">
-          <h2>საბოლოო შედეგი</h2>
-          <ol class="rank">${ranking.map((p) => `<li><span>${esc(p.name)}</span><span>${p.score}</span></li>`).join('')}</ol>
-          ${isHost() ? `<div class="row"><div><label class="f" for="rounds">რაუნდების რაოდენობა</label><input type="number" id="rounds" min="1" max="15" value="${state.totalRounds}"></div><button id="again">ახალი თამაში</button></div>`
-            : '<p class="hint">ველოდებით მასპინძელს ახალი თამაშისთვის…</p>'}
-        </div>` : `
-        <div class="stopwrap">
-          ${isHost() ? '<button id="next">შემდეგი რაუნდი</button>' : '<span class="hint">ველოდებით მასპინძელს შემდეგი რაუნდისთვის…</span>'}
-        </div>`}
-      <p class="err" id="err"></p>
-      <p><button class="ghost" id="leave">გასვლა</button></p>`;
-
-    $('#leave').onclick = () => leave();
-    const next = $('#next');
-    if (next) next.onclick = async () => { try { await api('next', {}); } catch (e) { $('#err').textContent = e.message; } };
-    const again = $('#again');
-    if (again) again.onclick = async () => { try { await api('start', { rounds: $('#rounds').value }); } catch (e) { $('#err').textContent = e.message; } };
-  }
-
-  // ---------- გაშვება ----------
-  if (session) { screenKey = 'connecting'; app.innerHTML = '<p class="sub">ვუკავშირდებით…</p>'; connect(); }
-  else renderHome();
-})();
-</script>
-</body>
-</html>
+/* ---- ოთახები და გასვლა ---- */
+function pub(){if(!net||!net.host)return;fetch(`/info?room=${encodeURIComponent(net.room)}&id=${net.id}`,{method:'POST',body:JSON.stringify({name:lob[0]||name,n:lob.length,c:lob.filter(x=>x!==null).length,st:G?1:0})}).catch(()=>{})}
+function rooms(){if(!lan||!$('#rl'))return;fetch('/rooms',{cache:'no-store'}).then(r=>r.json()).then(l=>{const e=$('#rl');if(!e)return;
+ e.innerHTML=l.length?l.map(x=>`<button data-r="${esc(x.room)}" onclick=joinRoom(this.dataset.r)>${esc(x.host)}-ის ოთახი · ${x.c}/${x.n}</button>`).join(''):'<small>ღია ოთახი ვერ მოიძებნა. შექმენი შენი!</small>'}).catch(()=>{})}
+function leave(force){
+ if(!force&&G&&!confirm(net?(net.host?'გავიდე? თამაში ყველასთვის დასრულდება.':'გავიდე? შენს ადგილს ბოტი დაიკავებს.'):'გავიდე მენიუში? მიმდინარე თამაში დაიკარგება.'))return;
+ clearTimeout(tm);if(net&&net.es)net.es.close();
+ net=null;G=null;V=null;sel=null;grp=[];seats={};lob=[];seen=0;seenA=0;DG=null;DR=null;hid.clear();FX.innerHTML='';menu()}
+setInterval(rooms,2000);
+menu();
+</script></body></html>
