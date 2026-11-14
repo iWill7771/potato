@@ -1,120 +1,342 @@
-/* სიტყვობანა — სტატიკური სერვერი + WebSocket რელე (მასპინძელი განსაზღვრავს თამაშს) */
-const http = require('http'), fs = require('fs'), path = require('path');
+// ქალაქობანა — მრავალმოთამაშიანი სერვერი
+// გაშვება: node server.js   →   http://localhost:3000
+// დამოკიდებულებები არ სჭირდება (მხოლოდ Node-ის ჩაშენებული მოდულები).
+
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
 const crypto = require('crypto');
-const PORT = process.env.PORT || 3000, ROOT = __dirname;
-const MIME = { '.html': 'text/html; charset=utf-8', '.txt': 'text/plain; charset=utf-8', '.js': 'text/javascript', '.json': 'application/json' };
 
-const server = http.createServer((req, res) => {
-    let p = decodeURIComponent(req.url.split('?')[0]);
-    if (p === '/') p = '/index.html';
-    const f = path.join(ROOT, path.normalize(p));
-    if (!f.startsWith(ROOT) || !['index.html', 'words.txt', 'common.txt'].includes(path.basename(f))) { res.writeHead(404); return res.end('Not found'); }
-    fs.readFile(f, (e, d) => {
-        if (e) { res.writeHead(404); return res.end('Not found'); }
-        res.writeHead(200, { 'Content-Type': MIME[path.extname(f)] || 'application/octet-stream' });
-        res.end(d);
+const PORT = process.env.PORT || 3000;
+
+// ---------- თამაშის პარამეტრები (შეგიძლია შეცვალო) ----------
+const CATEGORIES = ['ბიჭის სახელი', 'გოგოს სახელი', 'ქალაქი/სოფელი', 'ცხოველი', 'მცენარე', 'ნივთი'];
+const LETTERS = 'ა ბ გ დ ე ვ ზ თ ი კ ლ მ ნ ო პ რ ს ტ უ ფ ქ შ ჩ ც წ ხ ჯ'.split(' ');
+const COUNTDOWN_MS = 10000;   // "სტოპის" შემდეგ დარჩენილი დრო დანარჩენებისთვის
+const COLLECT_MS = 3000;      // პასუხების მოლოდინის მაქსიმუმი რაუნდის ბოლოს
+const POINTS_UNIQUE = 10;
+const POINTS_SHARED = 5;
+const MAX_PLAYERS = 12;
+const MAX_LEN = 40;
+
+const rooms = new Map();
+
+// ---------- დამხმარე ფუნქციები ----------
+const rid = (n) => crypto.randomBytes(n).toString('hex');
+
+function newRoomCode() {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  for (;;) {
+    let c = '';
+    for (let i = 0; i < 4; i++) c += alphabet[crypto.randomInt(alphabet.length)];
+    if (!rooms.has(c)) return c;
+  }
+}
+
+function norm(s) {
+  return String(s || '').trim().replace(/\s+/g, ' ').toLowerCase().slice(0, MAX_LEN);
+}
+
+function cleanAnswers(raw) {
+  const out = [];
+  for (let i = 0; i < CATEGORIES.length; i++) {
+    out.push(String((raw && raw[i]) || '').trim().replace(/\s+/g, ' ').slice(0, MAX_LEN));
+  }
+  return out;
+}
+
+function json(res, code, obj) {
+  res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8' });
+  res.end(JSON.stringify(obj));
+}
+
+function readBody(req) {
+  return new Promise((resolve) => {
+    let data = '';
+    req.on('data', (c) => {
+      data += c;
+      if (data.length > 20000) req.destroy();
     });
+    req.on('end', () => {
+      try { resolve(JSON.parse(data || '{}')); } catch { resolve({}); }
+    });
+    req.on('error', () => resolve({}));
+  });
+}
+
+// ---------- ოთახის მდგომარეობა ----------
+function publicState(room) {
+  return {
+    code: room.code,
+    phase: room.phase,            // lobby | playing | countdown | collecting | results | finished
+    host: room.host,
+    round: room.round,
+    totalRounds: room.totalRounds,
+    letter: room.letter,
+    categories: CATEGORIES,
+    endsAt: room.endsAt,
+    stopper: room.stopper,
+    serverNow: Date.now(),
+    players: [...room.players.values()].map((p) => ({
+      id: p.id, name: p.name, score: p.score, connected: p.connected,
+      submitted: room.phase === 'collecting' ? p.answers !== null : undefined,
+    })),
+    results: room.phase === 'results' || room.phase === 'finished' ? room.lastResults : null,
+  };
+}
+
+function broadcast(room) {
+  const payload = `data: ${JSON.stringify(publicState(room))}\n\n`;
+  for (const p of room.players.values()) {
+    if (p.res) { try { p.res.write(payload); } catch {} }
+  }
+}
+
+function pickHost(room) {
+  if (room.players.get(room.host)?.connected) return;
+  const next = [...room.players.values()].find((p) => p.connected);
+  if (next) room.host = next.id;
+}
+
+function startRound(room) {
+  room.round += 1;
+  const pool = LETTERS.filter((l) => !room.usedLetters.includes(l));
+  const src = pool.length ? pool : LETTERS;
+  room.letter = src[crypto.randomInt(src.length)];
+  room.usedLetters.push(room.letter);
+  room.phase = 'playing';
+  room.stopper = null;
+  room.endsAt = null;
+  room.lastResults = null;
+  for (const p of room.players.values()) p.answers = null;
+  broadcast(room);
+}
+
+function beginCollecting(room) {
+  if (room.phase !== 'countdown') return;
+  room.phase = 'collecting';
+  room.endsAt = null;
+  broadcast(room);
+  clearTimeout(room.timer);
+  room.timer = setTimeout(() => finishRound(room), COLLECT_MS);
+}
+
+function maybeFinishEarly(room) {
+  if (room.phase !== 'collecting') return;
+  const waiting = [...room.players.values()].some((p) => p.connected && p.answers === null);
+  if (!waiting) finishRound(room);
+}
+
+function finishRound(room) {
+  if (room.phase !== 'collecting') return;
+  clearTimeout(room.timer);
+
+  const letter = room.letter;
+  const players = [...room.players.values()];
+  const empty = CATEGORIES.map(() => '');
+  for (const p of players) if (p.answers === null) p.answers = empty;
+
+  // რომელი პასუხია ვალიდური (არ არის ცარიელი და იწყება დაძახებულ ასოზე)
+  const valid = (text) => {
+    const n = norm(text);
+    return n.length >= 2 && n[0] === letter;
+  };
+
+  const perCat = CATEGORIES.map((_, ci) => {
+    const counts = new Map();
+    for (const p of players) {
+      if (valid(p.answers[ci])) {
+        const n = norm(p.answers[ci]);
+        counts.set(n, (counts.get(n) || 0) + 1);
+      }
+    }
+    return counts;
+  });
+
+  const rows = players.map((p) => {
+    let total = 0;
+    const cells = CATEGORIES.map((_, ci) => {
+      const text = p.answers[ci];
+      let status, pts = 0;
+      if (!text) status = 'empty';
+      else if (!valid(text)) status = 'invalid';
+      else if (perCat[ci].get(norm(text)) > 1) { status = 'shared'; pts = POINTS_SHARED; }
+      else { status = 'unique'; pts = POINTS_UNIQUE; }
+      total += pts;
+      return { text, status, pts };
+    });
+    p.score += total;
+    return { id: p.id, name: p.name, cells, total, score: p.score };
+  });
+
+  room.lastResults = { letter, rows };
+  room.phase = room.round >= room.totalRounds ? 'finished' : 'results';
+  room.endsAt = null;
+  broadcast(room);
+}
+
+// ---------- მოთხოვნების დამუშავება ----------
+function getRoomAndPlayer(body) {
+  const room = rooms.get(String(body.room || '').toUpperCase());
+  const player = room && room.players.get(body.pid);
+  return { room, player };
+}
+
+function addPlayer(room, name) {
+  const p = {
+    id: rid(8), name: String(name || '').trim().slice(0, 16) || 'მოთამაშე',
+    score: 0, connected: false, res: null, answers: null,
+  };
+  room.players.set(p.id, p);
+  return p;
+}
+
+async function handleApi(req, res, url) {
+  if (req.method === 'GET' && url.pathname === '/api/events') {
+    const room = rooms.get(String(url.searchParams.get('room') || '').toUpperCase());
+    const player = room && room.players.get(url.searchParams.get('pid'));
+    if (!player) { res.writeHead(404); return res.end(); }
+
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache, no-transform',
+      Connection: 'keep-alive',
+      'X-Accel-Buffering': 'no',
+    });
+    res.write('retry: 1500\n\n');
+    if (player.res) { try { player.res.end(); } catch {} }
+    player.res = res;
+    player.connected = true;
+    clearTimeout(room.cleanup);
+    pickHost(room);
+    broadcast(room);
+
+    const ping = setInterval(() => { try { res.write(': ping\n\n'); } catch {} }, 20000);
+    req.on('close', () => {
+      clearInterval(ping);
+      if (player.res !== res) return;
+      player.res = null;
+      player.connected = false;
+      pickHost(room);
+      if (room.phase === 'playing' && ![...room.players.values()].some((p) => p.connected)) {
+        // ყველა გავიდა — ოთახს ცოტა ხანში წავშლით
+      }
+      maybeFinishEarly(room);
+      broadcast(room);
+      if (![...room.players.values()].some((p) => p.connected)) {
+        clearTimeout(room.cleanup);
+        room.cleanup = setTimeout(() => {
+          clearTimeout(room.timer);
+          rooms.delete(room.code);
+        }, 5 * 60 * 1000);
+      }
+    });
+    return;
+  }
+
+  if (req.method !== 'POST') return json(res, 405, { error: 'method' });
+  const body = await readBody(req);
+
+  switch (url.pathname) {
+    case '/api/create': {
+      const code = newRoomCode();
+      const room = {
+        code, phase: 'lobby', host: null, round: 0, totalRounds: 5, letter: null,
+        usedLetters: [], endsAt: null, stopper: null, lastResults: null,
+        players: new Map(), timer: null, cleanup: null,
+      };
+      const p = addPlayer(room, body.name);
+      room.host = p.id;
+      rooms.set(code, room);
+      return json(res, 200, { room: code, pid: p.id });
+    }
+
+    case '/api/join': {
+      const room = rooms.get(String(body.room || '').toUpperCase());
+      if (!room) return json(res, 404, { error: 'ოთახი ვერ მოიძებნა' });
+      if (room.phase !== 'lobby') return json(res, 400, { error: 'თამაში უკვე დაწყებულია' });
+      if (room.players.size >= MAX_PLAYERS) return json(res, 400, { error: 'ოთახი სავსეა' });
+      const p = addPlayer(room, body.name);
+      broadcast(room);
+      return json(res, 200, { room: room.code, pid: p.id });
+    }
+
+    case '/api/start': {
+      const { room, player } = getRoomAndPlayer(body);
+      if (!player || room.host !== player.id) return json(res, 403, { error: 'მხოლოდ მასპინძელს შეუძლია' });
+      if (room.phase !== 'lobby' && room.phase !== 'finished') return json(res, 400, { error: 'უკვე მიმდინარეობს' });
+      if (room.phase === 'finished') {
+        room.round = 0; room.usedLetters = [];
+        for (const p of room.players.values()) p.score = 0;
+      }
+      const n = Math.max(1, Math.min(15, parseInt(body.rounds, 10) || 5));
+      room.totalRounds = n;
+      startRound(room);
+      return json(res, 200, { ok: true });
+    }
+
+    case '/api/next': {
+      const { room, player } = getRoomAndPlayer(body);
+      if (!player || room.host !== player.id) return json(res, 403, { error: 'მხოლოდ მასპინძელს შეუძლია' });
+      if (room.phase !== 'results') return json(res, 400, { error: 'ახლა შეუძლებელია' });
+      startRound(room);
+      return json(res, 200, { ok: true });
+    }
+
+    case '/api/stop': {
+      const { room, player } = getRoomAndPlayer(body);
+      if (!player) return json(res, 404, { error: 'მოთამაშე ვერ მოიძებნა' });
+      if (room.phase !== 'playing') return json(res, 400, { error: 'ახლა სტოპი შეუძლებელია' });
+      const answers = cleanAnswers(body.answers);
+      if (answers.some((a) => !a)) return json(res, 400, { error: 'ჯერ ყველა გრაფა შეავსე' });
+      player.answers = answers;
+      room.stopper = player.id;
+      room.phase = 'countdown';
+      room.endsAt = Date.now() + COUNTDOWN_MS;
+      clearTimeout(room.timer);
+      room.timer = setTimeout(() => beginCollecting(room), COUNTDOWN_MS);
+      broadcast(room);
+      return json(res, 200, { ok: true });
+    }
+
+    case '/api/submit': {
+      const { room, player } = getRoomAndPlayer(body);
+      if (!player) return json(res, 404, { error: 'მოთამაშე ვერ მოიძებნა' });
+      if (room.phase === 'collecting' && player.answers === null) {
+        player.answers = cleanAnswers(body.answers);
+        broadcast(room);
+        maybeFinishEarly(room);
+      }
+      return json(res, 200, { ok: true });
+    }
+
+    default:
+      return json(res, 404, { error: 'not found' });
+  }
+}
+
+// ---------- სტატიკური ფაილები ----------
+const server = http.createServer((req, res) => {
+  const url = new URL(req.url, 'http://localhost');
+  if (url.pathname.startsWith('/api/')) {
+    handleApi(req, res, url).catch((e) => {
+      console.error(e);
+      if (!res.headersSent) json(res, 500, { error: 'server error' });
+    });
+    return;
+  }
+  if (url.pathname === '/' || url.pathname === '/index.html') {
+    fs.readFile(path.join(__dirname, 'index.html'), (err, data) => {
+      if (err) { res.writeHead(500); return res.end('index.html ვერ მოიძებნა'); }
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(data);
+    });
+    return;
+  }
+  res.writeHead(404);
+  res.end('Not found');
 });
 
-const rooms = new Map();   // code -> { host, members: [{id, name, ws}] }
-let nextId = 1;
-const send = (ws, o) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); };
-const lobby = r => r.members.map(m => ({ id: m.id, name: m.name }));
-const broadcastLobby = r => r.members.forEach(m => send(m.ws, { t: 'lobby', members: lobby(r) }));
-const cleanName = n => String(n || 'მოთამაშე').replace(/[<>&"'`]/g, '').trim().slice(0, 16) || 'მოთამაშე';
-const watchers = new Set();   // კლიენტები, რომლებიც ღია მაგიდების სიას ხედავენ
-const roomsList = () => [...rooms.entries()].filter(([, r]) => !r.started && r.members.length < 4).map(([code, r]) => ({ code, host: r.members[0].name, n: r.members.length }));
-const broadcastRooms = () => { const l = roomsList(); watchers.forEach(w => { if (!w.room) send(w, { t: 'rooms', rooms: l }); }); };
-
-/* ---- მინიმალური WebSocket (დამოკიდებულებების გარეშე) ---- */
-const GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11', MAX = 1 << 20;
-class Conn {
-    constructor(socket) { this.socket = socket; this.readyState = 1; this.buf = Buffer.alloc(0); this.frag = null; this.room = null; this.id = 0; }
-    send(str) {
-        if (this.readyState !== 1) return;
-        const p = Buffer.from(str), n = p.length;
-        const h = n < 126 ? Buffer.from([0x81, n]) : n < 65536 ? Buffer.from([0x81, 126, n >> 8, n & 255]) : (() => { const x = Buffer.alloc(10); x[0] = 0x81; x[1] = 127; x.writeBigUInt64BE(BigInt(n), 2); return x; })();
-        this.socket.write(Buffer.concat([h, p]));
-    }
-    frame(op, payload) { const h = Buffer.from([0x80 | op, payload.length]); this.socket.write(Buffer.concat([h, payload])); }
-    close() { if (this.readyState === 1) { this.readyState = 3; try { this.frame(8, Buffer.alloc(0)); this.socket.end(); } catch { } onClose(this); } }
-    feed(chunk) {
-        this.buf = Buffer.concat([this.buf, chunk]);
-        for (;;) {
-            const b = this.buf; if (b.length < 2) return;
-            const op = b[0] & 15, fin = b[0] & 128, masked = b[1] & 128; let len = b[1] & 127, off = 2;
-            if (len === 126) { if (b.length < 4) return; len = b.readUInt16BE(2); off = 4; }
-            else if (len === 127) { if (b.length < 10) return; len = Number(b.readBigUInt64BE(2)); off = 10; }
-            if (len > MAX) return this.close();
-            if (b.length < off + (masked ? 4 : 0) + len) return;
-            let data = b.subarray(off + (masked ? 4 : 0), off + (masked ? 4 : 0) + len);
-            if (masked) { const m = b.subarray(off, off + 4); data = Buffer.from(data); for (let i = 0; i < data.length; i++) data[i] ^= m[i & 3]; }
-            this.buf = b.subarray(off + (masked ? 4 : 0) + len);
-            if (op === 8) return this.close();
-            if (op === 9) { this.frame(10, data); continue; }
-            if (op === 10) continue;
-            if (op === 1 || op === 2) this.frag = [data]; else if (op === 0 && this.frag) this.frag.push(data); else continue;
-            if (fin) { const msg = Buffer.concat(this.frag).toString('utf8'); this.frag = null; onMessage(this, msg); }
-        }
-    }
-}
-
-server.on('upgrade', (req, socket) => {
-    const key = req.headers['sec-websocket-key'];
-    if (!key) return socket.destroy();
-    socket.write('HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ' +
-        crypto.createHash('sha1').update(key + GUID).digest('base64') + '\r\n\r\n');
-    socket.setNoDelay(true);
-    const ws = new Conn(socket);
-    socket.on('data', d => { try { ws.feed(d); } catch { ws.close(); } });
-    socket.on('close', () => { if (ws.readyState === 1) { ws.readyState = 3; onClose(ws); } });
-    socket.on('error', () => socket.destroy());
+server.listen(PORT, () => {
+  console.log(`ქალაქობანა მზადაა: http://localhost:${PORT}`);
 });
-
-function onMessage(ws, raw) {
-    let m; try { m = JSON.parse(raw); } catch { return; }
-    if (!m || typeof m !== 'object') return;
-    const room = ws.room && rooms.get(ws.room);
-
-    if (m.t === 'watch') {
-        if (ws.room) return;
-        watchers.add(ws); send(ws, { t: 'rooms', rooms: roomsList() });
-    } else if (m.t === 'create' && !ws.room) {
-        let code; do { code = String(Math.floor(1000 + Math.random() * 9000)); } while (rooms.has(code));
-        ws.id = nextId++; ws.room = code;
-        rooms.set(code, { members: [{ id: ws.id, name: cleanName(m.name), ws }] });
-        send(ws, { t: 'created', code }); broadcastLobby(rooms.get(code)); broadcastRooms();
-    } else if (m.t === 'join' && !ws.room) {
-        const r = rooms.get(String(m.code));
-        if (!r) return send(ws, { t: 'error', msg: 'ოთახი ვერ მოიძებნა' });
-        if (r.started) return send(ws, { t: 'error', msg: 'თამაში უკვე დაწყებულია' });
-        if (r.members.length >= 4) return send(ws, { t: 'error', msg: 'ოთახი სავსეა' });
-        ws.id = nextId++; ws.room = String(m.code);
-        r.members.push({ id: ws.id, name: cleanName(m.name), ws });
-        send(ws, { t: 'joined', code: ws.room }); broadcastLobby(r); broadcastRooms();
-    } else if (m.t === 'toHost' && room) {
-        send(room.members[0].ws, { t: 'fromGuest', id: ws.id, data: m.data });
-    } else if (m.t === 'toClient' && room && room.members[0].ws === ws) {
-        if (!room.started) { room.started = true; broadcastRooms(); }
-        const g = room.members.find(x => x.id === m.to);
-        if (g) send(g.ws, { t: 'fromHost', data: m.data });
-    }
-}
-
-function onClose(ws) {
-    watchers.delete(ws);
-    const r = ws.room && rooms.get(ws.room);
-    if (!r) return;
-    if (r.members[0].ws === ws) {
-        r.members.slice(1).forEach(x => { send(x.ws, { t: 'closed' }); x.ws.room = null; });
-        rooms.delete(ws.room);
-        broadcastRooms();
-    } else {
-        r.members = r.members.filter(x => x.ws !== ws);
-        send(r.members[0].ws, { t: 'left', id: ws.id });
-        broadcastLobby(r);
-        broadcastRooms();
-    }
-}
-
-server.listen(PORT, '0.0.0.0', () => console.log(`http://localhost:${PORT}  (LAN: გახსენით ამ კომპიუტერის IP:${PORT})`));

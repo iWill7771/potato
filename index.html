@@ -1,1393 +1,467 @@
 <!DOCTYPE html>
 <html lang="ka">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>სიტყვობანა - ქართული სკრაბლი (Georgian Scrabble)</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Noto+Sans+Georgian:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ქალაქობანა</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f8fbff;
+    --grid: #d3e3f4;
+    --ink: #1f3a93;
+    --ink-soft: #5d73b8;
+    --margin: #d9534f;
+    --good: #1c7c4d;
+    --shared: #ffe27a;
+    --muted: #8a94a8;
+    --line: #9db4dc;
+    --font: "Noto Sans Georgian", "Sylfaen", "Segoe UI", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    font-family: var(--font);
+    color: var(--ink);
+    background-color: var(--paper);
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 28px 28px;
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+  /* რვეულის წითელი ველი */
+  body::before {
+    content: "";
+    position: fixed; top: 0; bottom: 0; left: 44px; width: 2px;
+    background: var(--margin); opacity: .55; pointer-events: none;
+  }
+  main { max-width: 760px; margin: 0 auto; padding: 28px 20px 60px 72px; }
+  @media (max-width: 560px) {
+    body::before { left: 12px; }
+    main { padding: 20px 14px 50px 28px; }
+  }
+  h1 { font-size: 2.4rem; font-weight: 800; margin: 0 0 4px; letter-spacing: -.01em; }
+  h2 { font-size: 1.25rem; font-weight: 600; margin: 0 0 12px; }
+  p { margin: 0 0 12px; }
+  .sub { color: var(--ink-soft); }
+  .sheet {
+    background: rgba(255,255,255,.88);
+    border: 1.5px solid var(--line);
+    padding: 18px 20px;
+    margin: 18px 0;
+  }
+  label.f { display: block; font-weight: 600; margin-bottom: 4px; }
+  input[type=text], input[type=number] {
+    font: inherit; color: var(--ink);
+    background: transparent;
+    border: none; border-bottom: 2px solid var(--line);
+    padding: 6px 2px; width: 100%;
+    border-radius: 0;
+  }
+  input:focus-visible, button:focus-visible {
+    outline: 3px solid var(--ink); outline-offset: 2px;
+  }
+  input[type=text]:focus { border-bottom-color: var(--ink); }
+  input[readonly] { color: var(--ink-soft); }
+  button {
+    font: inherit; font-weight: 600; cursor: pointer;
+    color: #fff; background: var(--ink);
+    border: 2px solid var(--ink); padding: 10px 18px;
+    border-radius: 3px;
+  }
+  button.ghost { background: transparent; color: var(--ink); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+  .row > * { flex: 1 1 160px; }
+  .row > button { flex: 0 0 auto; }
+  .err { color: var(--margin); min-height: 1.5em; font-weight: 600; }
 
-    <style>
-        :root {
-            --font-georgian: 'Noto Sans Georgian', sans-serif;
-            --font-title: 'Cinzel', 'Noto Sans Georgian', serif;
-        }
+  /* ლობი */
+  .code {
+    font-size: 2.6rem; font-weight: 800; letter-spacing: .25em;
+    border: 2px dashed var(--ink); display: inline-block; padding: 2px 16px 2px 22px;
+  }
+  .players { list-style: none; margin: 0; padding: 0; }
+  .players li {
+    display: flex; justify-content: space-between; gap: 10px;
+    padding: 6px 2px; border-bottom: 1px solid var(--grid);
+  }
+  .players .off { color: var(--muted); }
+  .tag { font-size: .8rem; color: var(--ink-soft); margin-left: 6px; }
 
-        body {
-            font-family: var(--font-georgian);
-            background: #0f0805;
-            background-image: 
-                radial-gradient(circle at 50% 20%, rgba(212, 175, 55, 0.08) 0%, transparent 60%),
-                radial-gradient(circle at 10% 80%, rgba(139, 69, 19, 0.12) 0%, transparent 50%),
-                radial-gradient(circle at 90% 80%, rgba(139, 69, 19, 0.12) 0%, transparent 50%);
-            color: #f3e5ab;
-            min-height: 100vh;
-            user-select: none;
-        }
+  /* რაუნდი */
+  .roundbar { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; }
+  .bigletter {
+    font-size: clamp(110px, 26vw, 190px); font-weight: 800; line-height: 1;
+    display: inline-block; transform: rotate(-3deg);
+    background: linear-gradient(transparent 62%, var(--shared) 62%, var(--shared) 90%, transparent 90%);
+    padding: 0 12px; margin: 6px 0 10px;
+  }
+  .cat { display: grid; grid-template-columns: 150px 1fr; gap: 12px; align-items: end; margin-bottom: 8px; }
+  @media (max-width: 560px) { .cat { grid-template-columns: 1fr; gap: 0; } }
+  .cat span { color: var(--ink-soft); font-weight: 600; padding-bottom: 6px; }
+  .cat.bad input { border-bottom-color: var(--margin); }
 
-        /* Dark Glassmorphism Panels */
-        .glass-panel {
-            background: rgba(22, 13, 8, 0.85);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(212, 175, 55, 0.2);
-            box-shadow: 
-                0 20px 50px rgba(0, 0, 0, 0.8),
-                inset 0 1px 1px rgba(255, 223, 138, 0.15);
-        }
+  .stopwrap { margin-top: 18px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .stamp {
+    background: transparent; color: var(--margin);
+    border: 4px double var(--margin); border-radius: 6px;
+    font-size: 1.9rem; font-weight: 800; letter-spacing: .08em;
+    padding: 6px 26px; transform: rotate(-3deg);
+  }
+  .stamp:disabled { opacity: .35; }
+  .stamp:not(:disabled):hover { background: var(--margin); color: #fff; }
+  .hint { color: var(--ink-soft); }
 
-        .gold-text-gradient {
-            background: linear-gradient(135deg, #fff7ed 0%, #fef08a 30%, #d4af37 70%, #9a6b1f 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+  .countdown {
+    margin-top: 16px; padding: 12px 14px; border: 2px solid var(--margin);
+    color: var(--margin); font-weight: 600;
+  }
+  .countdown .bar { height: 6px; background: var(--grid); margin-top: 8px; }
+  .countdown .bar i { display: block; height: 100%; background: var(--margin); width: 100%; }
+  .time { font-size: 1.6rem; font-weight: 800; }
 
-        /* Dark Wood Board Frame */
-        .wood-frame {
-            background: radial-gradient(circle, #221208 0%, #0d0603 100%);
-            box-shadow: 
-                0 25px 60px rgba(0,0,0,0.95),
-                inset 0 0 20px rgba(0,0,0,0.9),
-                0 0 0 2px rgba(212, 175, 55, 0.3);
-            border: 12px solid #1a0e06;
-            border-radius: 20px;
-        }
+  /* შედეგები */
+  .tablewrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; background: rgba(255,255,255,.9); }
+  th, td { border: 1px solid var(--line); padding: 6px 8px; text-align: left; vertical-align: top; font-size: .95rem; }
+  th { font-weight: 600; background: #eef4fc; }
+  td.unique .pts { color: var(--good); font-weight: 800; }
+  td.shared { background: var(--shared); }
+  td.shared .pts { font-weight: 800; }
+  td.invalid .txt, td.empty .txt { text-decoration: line-through; color: var(--muted); }
+  td.invalid .pts, td.empty .pts { color: var(--muted); }
+  .pts { margin-left: 6px; font-size: .85rem; }
+  td.total, th.total { font-weight: 800; text-align: right; white-space: nowrap; }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: .85rem; color: var(--ink-soft); margin-top: 8px; }
+  .legend b { padding: 0 6px; border: 1px solid var(--line); }
+  .legend .s { background: var(--shared); }
 
-        .scrabble-board {
-            display: grid;
-            grid-template-columns: repeat(15, minmax(0, 1fr));
-            grid-template-rows: repeat(15, minmax(0, 1fr));
-            gap: 3px;
-            background: #0d0603;
-            padding: 6px;
-            border-radius: 8px;
-            box-shadow: inset 0 0 25px rgba(0,0,0,0.95);
-        }
+  .rank { list-style: none; padding: 0; margin: 0 0 16px; counter-reset: r; }
+  .rank li { display: flex; justify-content: space-between; padding: 10px 4px; border-bottom: 1px solid var(--line); font-size: 1.15rem; }
+  .rank li:first-child { font-weight: 800; font-size: 1.5rem; }
+  .rank li::before { counter-increment: r; content: counter(r) "."; width: 2rem; color: var(--ink-soft); }
+  .rank li span:first-of-type { flex: 1; }
 
-        /* Cell Styling - Dark Theme */
-        .cell {
-            aspect-ratio: 1 / 1;
-            border-radius: 4px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-size: clamp(0.6rem, 1.3vw, 0.95rem);
-            font-weight: 700;
-            position: relative;
-            transition: all 0.15s ease;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.6);
-            cursor: pointer;
-        }
-
-        .cell-normal { background: #1a100a; color: #523e32; }
-        .cell-dl { background: #0f2b3e; color: #7dd3fc; border: 1px solid rgba(125, 211, 252, 0.25); } 
-        .cell-tl { background: #122b68; color: #60a5fa; border: 1px solid rgba(96, 165, 250, 0.35); font-weight: 800; } 
-        .cell-dw { background: #4a101d; color: #fca5a5; border: 1px solid rgba(252, 165, 165, 0.25); } 
-        .cell-tw { background: #5c0a1a; color: #f87171; border: 1px solid rgba(248, 113, 113, 0.4); font-weight: 800; } 
-        .cell-center { background: #4a2107; color: #fef08a; border: 1px solid #d4af37; }
-
-        .cell.drag-over {
-            filter: brightness(1.5);
-            outline: 2px dashed #fef08a;
-            outline-offset: -2px;
-        }
-
-        /* Scrabble Tile Styling */
-        .tile {
-            background: linear-gradient(145deg, #2a1c12 0%, #1f140c 60%, #150d07 100%);
-            color: #f3e5ab;
-            border-radius: 6px;
-            box-shadow: 
-                0 4px 8px rgba(0, 0, 0, 0.6),
-                inset 0 1px 0 rgba(255, 235, 175, 0.2),
-                inset 0 -2px 0 rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            font-weight: 800;
-            cursor: grab;
-            transition: transform 0.15s ease, box-shadow 0.15s ease;
-            border: 1px solid rgba(212, 175, 55, 0.35);
-            user-select: none;
-        }
-
-        .tile:active {
-            cursor: grabbing;
-            transform: scale(1.05);
-            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.7);
-        }
-
-        .tile.selected {
-            border-color: #fef08a;
-            transform: translateY(-4px);
-            box-shadow: 0 8px 16px rgba(212, 175, 55, 0.5);
-        }
-
-        .tile-temp {
-            opacity: 0.9;
-            outline: 2px solid #3b82f6;
-            outline-offset: -1px;
-        }
-
-        .tile-score {
-            position: absolute;
-            bottom: 1px;
-            right: 3px;
-            font-size: clamp(0.5rem, 0.9vw, 0.75rem);
-            font-weight: 700;
-            color: #d4af37;
-            line-height: 1;
-        }
-
-        /* Rack Container */
-        .rack-container {
-            background: linear-gradient(180deg, #221208 0%, #0d0603 100%);
-            border: 2px solid #4a2810;
-            box-shadow: 
-                0 10px 25px rgba(0,0,0,0.8),
-                inset 0 2px 4px rgba(255,255,255,0.08);
-            border-radius: 14px;
-            padding: 8px 16px;
-        }
-
-        .tile-last { outline: 2px solid #fef08a; outline-offset: -2px; }
-
-        /* Fit everything on one screen — no scroll for board+rack */
-        .board-wrap {
-            width: min(100%, calc(100vh - 168px), 720px);
-            max-width: 100%;
-        }
-        @media (max-width: 1023px) {
-            .board-wrap { width: min(100%, calc(100vh - 200px)); }
-        }
-        @media (min-width: 1024px) {
-            .board-wrap { width: min(100%, calc(100vh - 150px), 680px); }
-        }
-
-        .wood-frame {
-            border-width: 6px !important;
-            border-radius: 12px !important;
-            padding: 4px !important;
-        }
-        .scrabble-board { gap: 2px !important; padding: 3px !important; }
-
-        .rack-container {
-            padding: 4px 10px !important;
-            border-radius: 10px !important;
-            min-height: 52px !important;
-        }
-
-        /* Compact left panel */
-        .side-panel { width: 220px; max-width: 220px; }
-        @media (min-width: 1280px) { .side-panel { width: 240px; max-width: 240px; } }
-
-        body.game-active {
-            height: 100vh;
-            overflow: hidden;
-            padding: 6px !important;
-        }
-        body.game-active footer { display: none; }
-
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 5px; height: 5px; }
-        ::-webkit-scrollbar-track { background: rgba(10, 5, 2, 0.8); }
-        ::-webkit-scrollbar-thumb { background: #4a2810; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #d4af37; }
-    </style>
+  .hidden { display: none !important; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
 </head>
-<body class="flex flex-col min-h-screen justify-between p-1.5 md:p-2 overflow-x-hidden">
+<body>
+<main id="app"></main>
 
-    <!-- MAIN MENU OVERLAY -->
-    <div id="mainMenu" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
-        <div class="glass-panel max-w-xl w-full p-6 md:p-8 rounded-3xl border border-amber-500/30 text-center flex flex-col items-center gap-6 shadow-2xl">
-            
-            <div class="flex flex-col items-center gap-2">
-                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-700 flex items-center justify-center shadow-lg border border-amber-300/40 mb-1">
-                    <i data-lucide="grid" class="w-10 h-10 text-amber-950"></i>
-                </div>
-                <h1 class="text-3xl md:text-4xl font-extrabold tracking-wide gold-text-gradient font-serif">
-                    სიტყვობანა
-                </h1>
-                <p class="text-xs md:text-sm text-amber-200/70">ქართული ინტელექტუალური სკრაბლი</p>
-            </div>
+<script>
+(() => {
+  const app = document.getElementById('app');
+  const $ = (s, r = app) => r.querySelector(s);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 
-            <!-- MODE SELECTOR -->
-            <div class="w-full flex flex-col gap-4 my-2">
-                <div class="grid grid-cols-2 gap-2 p-1.5 bg-amber-950/40 rounded-2xl border border-amber-500/20">
-                    <button id="modeAiBtn" onclick="selectGameMode('ai')" class="py-3 px-4 rounded-xl font-bold text-sm transition flex items-center justify-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 text-amber-950 shadow-md">
-                        <i data-lucide="bot" class="w-4 h-4"></i>
-                        <span>კომპიუტერთან</span>
-                    </button>
-                    <button id="modeNetBtn" onclick="selectGameMode('lan')" class="py-3 px-4 rounded-xl font-bold text-sm transition flex items-center justify-center space-x-2 text-amber-200 hover:bg-amber-900/40">
-                        <i data-lucide="wifi" class="w-4 h-4"></i>
-                        <span>ქსელში (LAN)</span>
-                    </button>
-                </div>
+  let session = null;       // { room, pid }
+  let state = null;         // სერვერის უახლესი მდგომარეობა
+  let es = null;            // EventSource
+  let clockOffset = 0;      // serverNow - Date.now()
+  let screenKey = '';       // რომელი ეკრანია ახლა დახატული
+  let drafts = [];          // მიმდინარე რაუნდის პასუხები
+  let submittedRound = -1;  // რომელი რაუნდის პასუხები გავაგზავნეთ
+  let tickTimer = null;
 
-                <!-- VS AI OPTIONS -->
-                <div id="aiOptions" class="flex flex-col gap-3 p-4 rounded-2xl bg-amber-950/20 border border-amber-500/10">
-                    <label class="text-xs text-amber-200/80 font-semibold">მოწინააღმდეგე ბოტების რაოდენობა:</label>
-                    <div class="grid grid-cols-3 gap-2"><button onclick="setBotCount(1)" id="botCount1" class="py-2.5 rounded-xl border text-xs font-bold transition">1 ბოტი</button><button onclick="setBotCount(2)" id="botCount2" class="py-2.5 rounded-xl border text-xs font-bold transition">2 ბოტი</button><button onclick="setBotCount(3)" id="botCount3" class="py-2.5 rounded-xl border text-xs font-bold transition">3 ბოტი</button></div>
-                    <label class="text-xs text-amber-200/80 font-semibold">სირთულე:</label>
-                    <div class="grid grid-cols-3 gap-2"><button onclick="setBotLevel(1)" id="botLevel1" class="py-2.5 rounded-xl border text-xs font-bold transition">მარტივი</button><button onclick="setBotLevel(2)" id="botLevel2" class="py-2.5 rounded-xl border text-xs font-bold transition">საშუალო</button><button onclick="setBotLevel(3)" id="botLevel3" class="py-2.5 rounded-xl border text-xs font-bold transition">რთული</button></div>
-                </div>
-                <!-- LAN OPTIONS -->
-                <div id="netOptions" class="hidden flex flex-col gap-3 p-4 rounded-2xl bg-amber-950/20 border border-amber-500/10">
-                    <input id="netName" value="მოთამაშე" maxlength="16" placeholder="თქვენი სახელი" class="bg-amber-950/80 border border-amber-500/30 rounded-xl px-3 py-2 text-xs text-amber-100 focus:outline-none">
-                    <input id="netServer" placeholder="სერვერი, მაგ. 192.168.1.5:3000" class="hidden bg-amber-950/80 border border-amber-500/30 rounded-xl px-3 py-2 text-xs text-amber-100 focus:outline-none">
-                    <div id="netStatus" class="text-xs text-left"></div>
-                    <div id="netIdle" class="flex flex-col gap-2">
-                        <button onclick="netCreate()" class="w-full py-2.5 bg-amber-600 hover:bg-amber-500 text-amber-950 font-bold text-sm rounded-xl transition">+ მაგიდის შექმნა</button>
-                        <div class="text-[11px] text-amber-200/60 text-left mt-1">ღია მაგიდები:</div>
-                        <div id="netTables" class="flex flex-col gap-1.5 text-left"></div>
-                    </div>
-                    <div id="netRoom" class="hidden flex flex-col gap-2">
-                        <div id="netLobby" class="text-xs text-left"></div>
-                        <button onclick="netLeaveTable()" class="w-full py-2 border border-amber-500/30 text-amber-200 text-xs font-bold rounded-xl hover:bg-amber-900/40 transition">მაგიდის დატოვება</button>
-                    </div>
-                </div>
-            </div>
+  const saved = sessionStorage.getItem('qalaqobana');
+  if (saved) { try { session = JSON.parse(saved); } catch {} }
 
-            <!-- START GAME BUTTON -->
-            <button id="startGameBtn" onclick="startGame()" class="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-amber-950 font-black text-base shadow-xl shadow-amber-900/50 transition active:scale-95 flex items-center justify-center space-x-2">
-                <i data-lucide="play" class="w-5 h-5 fill-current"></i>
-                <span id="startBtnText">თამაშის დაწყება</span>
-            </button>
-            <div id="dictStatus" class="text-[11px] text-amber-200/50">ლექსიკონი იტვირთება...</div>
+  async function api(path, body) {
+    try {
+      const r = await fetch('/api/' + path, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...body, room: session?.room, pid: session?.pid }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data.error || 'შეცდომა');
+      return data;
+    } catch (e) {
+      if (e instanceof TypeError) throw new Error('სერვერთან კავშირი ვერ დამყარდა');
+      throw e;
+    }
+  }
 
-            <div class="flex gap-4 text-xs text-amber-200/60">
-                <button onclick="openModal('rulesModal')" class="hover:text-amber-300 transition flex items-center gap-1">
-                    <i data-lucide="book-open" class="w-3.5 h-3.5"></i> წესები
-                </button>
-                •
-                <button onclick="downloadWordlist()" class="hover:text-amber-300 transition flex items-center gap-1">
-                    <i data-lucide="download" class="w-3.5 h-3.5"></i> ლექსიკონის ჩამოტვირთვა
-                </button>
-            </div>
+  function connect() {
+    if (es) es.close();
+    es = new EventSource(`/api/events?room=${encodeURIComponent(session.room)}&pid=${encodeURIComponent(session.pid)}`);
+    es.onmessage = (ev) => {
+      state = JSON.parse(ev.data);
+      clockOffset = state.serverNow - Date.now();
+      render();
+    };
+    es.onerror = () => {
+      // 404 → EventSource CLOSED: ოთახი ან მოთამაშე აღარ არსებობს
+      if (es.readyState === EventSource.CLOSED) leave('ოთახი აღარ არსებობს');
+    };
+  }
+
+  function leave(msg) {
+    if (es) es.close();
+    es = null; session = null; state = null; screenKey = '';
+    sessionStorage.removeItem('qalaqobana');
+    history.replaceState(null, '', location.pathname);
+    renderHome(msg || '');
+  }
+
+  const serverNow = () => Date.now() + clockOffset;
+  const me = () => state.players.find((p) => p.id === session.pid);
+  const isHost = () => state.host === session.pid;
+
+  // ---------- მთავარი ეკრანი ----------
+  function renderHome(msg = '') {
+    screenKey = 'home';
+    const preset = new URLSearchParams(location.search).get('room') || '';
+    app.innerHTML = `
+      <h1>ქალაქობანა</h1>
+      <p class="sub">ასო, ექვსი გრაფა და „სტოპი“ — ვინ უფრო სწრაფი და გამომგონებელია?</p>
+      <div class="sheet">
+        <label class="f" for="name">შენი სახელი</label>
+        <input type="text" id="name" maxlength="16" autocomplete="nickname" value="${esc(localStorage.getItem('qq-name') || '')}">
+      </div>
+      <div class="sheet">
+        <h2>ახალი თამაში</h2>
+        <button id="create">ოთახის შექმნა</button>
+      </div>
+      <div class="sheet">
+        <h2>შეუერთდი მეგობრებს</h2>
+        <div class="row">
+          <div>
+            <label class="f" for="code">ოთახის კოდი</label>
+            <input type="text" id="code" maxlength="4" autocapitalize="characters" value="${esc(preset.toUpperCase())}">
+          </div>
+          <button id="join" class="ghost">შესვლა</button>
         </div>
-    </div>
+      </div>
+      <p class="err" id="err">${esc(msg)}</p>
+      <details class="sheet"><summary><b>თამაშის წესები</b></summary>
+        <p style="margin-top:10px">თითო რაუნდზე დაიძახება ერთი ასო. თითოეულმა მოთამაშემ უნდა შეავსოს ექვსივე გრაფა სიტყვით, რომელიც ამ ასოზე იწყება.</p>
+        <p>ვინც პირველი შეავსებს, აჭერს „სტოპს“ — დანარჩენებს რჩებათ 10 წამი დასასრულებლად.</p>
+        <p>ქულები: უნიკალური სიტყვა — <b>10</b>, სხვასაც იგივე რომ დაუწერია — <b>5</b>, ცარიელი ან არასწორ ასოზე დაწყებული — <b>0</b>.</p>
+      </details>`;
+    const nameEl = $('#name');
+    const err = (m) => { $('#err').textContent = m; };
+    const nm = () => {
+      const v = nameEl.value.trim();
+      if (!v) { err('ჯერ სახელი ჩაწერე'); nameEl.focus(); return null; }
+      localStorage.setItem('qq-name', v);
+      return v;
+    };
+    $('#create').onclick = async () => {
+      const name = nm(); if (!name) return;
+      try { session = await api('create', { name }); start(); } catch (e) { err(e.message); }
+    };
+    $('#join').onclick = async () => {
+      const name = nm(); if (!name) return;
+      const room = $('#code').value.trim().toUpperCase();
+      if (room.length !== 4) { err('კოდი 4 სიმბოლოსგან შედგება'); return; }
+      try { session = await api('join', { name, room }); start(); } catch (e) { err(e.message); }
+    };
+  }
 
-    <!-- TOP HEADER / NAVBAR -->
-    <header class="max-w-[1400px] w-full mx-auto mb-1 flex items-center justify-between glass-panel p-2 md:p-2.5 rounded-xl">
-        <div role="button" tabindex="0" onclick="askLeave()" title="მთავარ გვერდზე დაბრუნება" class="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition">
-            <div class="w-8 h-8 md:w-9 md:h-9 rounded-lg bg-gradient-to-br from-amber-400 to-amber-700 flex items-center justify-center shadow-lg border border-amber-300/40">
-                <i data-lucide="grid" class="w-4 h-4 md:w-5 md:h-5 text-amber-950"></i>
-            </div>
-            <div>
-                <h1 class="text-base md:text-lg font-extrabold tracking-wide gold-text-gradient font-serif">
-                    სიტყვობანა
-                </h1>
-                <p class="text-xs text-amber-200/60 hidden sm:block">ქართული ინტელექტუალური სკრაბლი</p>
-            </div>
+  function start() {
+    sessionStorage.setItem('qalaqobana', JSON.stringify(session));
+    history.replaceState(null, '', '?room=' + session.room);
+    connect();
+  }
+
+  // ---------- რენდერი ----------
+  function render() {
+    if (!state) return;
+    clearInterval(tickTimer);
+    const ph = state.phase;
+    if (ph === 'lobby') return renderLobby();
+    if (ph === 'playing' || ph === 'countdown') return renderPlay();
+    if (ph === 'collecting') return renderCollecting();
+    if (ph === 'results' || ph === 'finished') return renderResults();
+  }
+
+  function playersList() {
+    return `<ul class="players">${state.players.map((p) => `
+      <li class="${p.connected ? '' : 'off'}">
+        <span>${esc(p.name)}${p.id === state.host ? '<span class="tag">მასპინძელი</span>' : ''}${p.id === session.pid ? '<span class="tag">შენ</span>' : ''}${p.connected ? '' : '<span class="tag">გამოსულია</span>'}</span>
+        <span>${p.score}</span>
+      </li>`).join('')}</ul>`;
+  }
+
+  function renderLobby() {
+    const key = 'lobby:' + state.players.length + ':' + state.host + ':' + state.players.map((p) => p.connected).join('');
+    if (screenKey === 'lobby') {
+      // შევინარჩუნოთ რაუნდების რაოდენობა ველში
+      const keep = $('#rounds')?.value;
+      draw(); if (keep && $('#rounds')) $('#rounds').value = keep;
+    } else draw();
+    screenKey = 'lobby';
+
+    function draw() {
+      const link = location.origin + '/?room=' + state.code;
+      app.innerHTML = `
+        <h1>ქალაქობანა</h1>
+        <p class="sub">გაუგზავნე მეგობრებს ეს კოდი ან ბმული:</p>
+        <p><span class="code">${esc(state.code)}</span></p>
+        <p><button class="ghost" id="copy">ბმულის კოპირება</button> <span class="hint" id="copied"></span></p>
+        <div class="sheet"><h2>მოთამაშეები (${state.players.length})</h2>${playersList()}</div>
+        ${isHost() ? `
+          <div class="sheet row">
+            <div><label class="f" for="rounds">რაუნდების რაოდენობა</label>
+            <input type="number" id="rounds" min="1" max="15" value="5"></div>
+            <button id="go">თამაშის დაწყება</button>
+          </div>` : `<p class="hint">ველოდებით მასპინძელს, სანამ თამაშს დაიწყებს…</p>`}
+        <p class="err" id="err"></p>
+        <p><button class="ghost" id="leave">გასვლა</button></p>`;
+      $('#copy').onclick = async () => {
+        try { await navigator.clipboard.writeText(link); $('#copied').textContent = 'დაკოპირდა'; }
+        catch { $('#copied').textContent = link; }
+      };
+      $('#leave').onclick = () => leave();
+      const go = $('#go');
+      if (go) go.onclick = async () => {
+        try { await api('start', { rounds: $('#rounds').value }); } catch (e) { $('#err').textContent = e.message; }
+      };
+    }
+  }
+
+  function renderPlay() {
+    const key = 'play:' + state.round;
+    if (screenKey !== key) {
+      screenKey = key;
+      drafts = state.categories.map(() => '');
+      submittedRound = -1;
+      app.innerHTML = `
+        <div class="roundbar">
+          <h2>რაუნდი ${state.round} / ${state.totalRounds}</h2>
+          <span class="sub" id="who"></span>
         </div>
-
-        <div class="flex items-center space-x-2 sm:space-x-4">
-            <button id="soundToggleBtn" onclick="toggleSound()" class="p-2.5 rounded-xl bg-amber-950/60 hover:bg-amber-900/80 border border-amber-600/30 text-amber-200 transition" title="ხმის ჩართვა/გამორთვა">
-                <i id="soundIcon" data-lucide="volume-2" class="w-5 h-5"></i>
-            </button>
-            <button onclick="openModal('rulesModal')" class="p-2.5 rounded-xl bg-amber-950/60 hover:bg-amber-900/80 border border-amber-600/30 text-amber-200 transition flex items-center space-x-1.5 text-xs font-semibold">
-                <i data-lucide="book-open" class="w-4 h-4"></i>
-                <span class="hidden sm:inline">წესები</span>
-            </button>
-            <button onclick="openModal('dictModal')" class="p-2.5 rounded-xl bg-amber-950/60 hover:bg-amber-900/80 border border-amber-600/30 text-amber-200 transition flex items-center space-x-1.5 text-xs font-semibold">
-                <i data-lucide="search" class="w-4 h-4"></i>
-                <span class="hidden sm:inline">ლექსიკონი</span>
-            </button>
+        <div class="bigletter" aria-label="ასო ${esc(state.letter)}">${esc(state.letter)}</div>
+        <div class="sheet" id="fields">
+          ${state.categories.map((c, i) => `
+            <div class="cat" data-i="${i}">
+              <span>${esc(c)}</span>
+              <input type="text" maxlength="40" autocomplete="off" aria-label="${esc(c)}" data-i="${i}">
+            </div>`).join('')}
         </div>
-    </header>
-
-    <!-- MAIN GAME AREA -->
-    <main class="max-w-[1400px] w-full mx-auto grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-2 lg:gap-3 items-start flex-grow min-h-0">
-        
-        <!-- LEFT PANEL: SCOREBOARD & CONTROLS -->
-        <section class="side-panel flex flex-col gap-1.5 order-2 lg:order-1 shrink-0">
-            
-            <!-- SCORES CARD -->
-            <div class="glass-panel p-2.5 rounded-xl flex flex-col gap-1.5">
-                <h2 class="text-[10px] uppercase tracking-wider text-amber-400/80 font-bold flex items-center justify-between border-b border-amber-500/20 pb-1">
-                    <span>ანგარიში</span>
-                    <i data-lucide="trophy" class="w-4 h-4 text-amber-400"></i>
-                </h2>
-
-                <div id="playersList" class="flex flex-col gap-2">
-                    <!-- Dynamic Player Score Cards -->
-                </div>
-
-                <!-- TILES LEFT -->
-                <div class="mt-1 pt-2 border-t border-amber-500/10 flex justify-between items-center text-xs">
-                    <span class="text-amber-200/60">დარჩენილი ასოები:</span>
-                    <span id="bagCount" class="font-bold text-amber-400 text-sm">0</span>
-                </div>
-            </div>
-
-            <!-- ACTION BUTTONS -->
-            <div class="glass-panel p-2 rounded-xl flex flex-col gap-1.5">
-                <button id="submitBtn" onclick="submitWord()" class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-600 via-amber-500 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-amber-950 font-black text-sm shadow-lg shadow-amber-900/40 transition active:scale-95 flex items-center justify-center space-x-2">
-                    <i data-lucide="check-circle" class="w-5 h-5"></i>
-                    <span>სვლის დადასტურება</span>
-                </button>
-
-                <div class="grid grid-cols-2 gap-2">
-                    <button onclick="recallClick()" class="py-2 px-3 rounded-xl bg-amber-950/60 hover:bg-amber-900/80 border border-amber-600/30 text-amber-200 text-xs font-bold transition flex items-center justify-center space-x-1">
-                        <i data-lucide="undo" class="w-3.5 h-3.5"></i>
-                        <span>დაბრუნება</span>
-                    </button>
-                    <button onclick="passTurn()" class="py-2 px-3 rounded-xl bg-amber-950/60 hover:bg-amber-900/80 border border-amber-600/30 text-amber-200 text-xs font-bold transition flex items-center justify-center space-x-1">
-                        <i data-lucide="skip-forward" class="w-3.5 h-3.5"></i>
-                        <span>გატარება</span>
-                    </button>
-                </div>
-                <button onclick="swapTiles()" class="w-full py-2 px-3 rounded-xl bg-amber-950/40 hover:bg-amber-900/60 border border-amber-600/20 text-amber-300/80 text-xs font-semibold transition flex items-center justify-center space-x-1">
-                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
-                    <span>ასოების შეცვლა</span>
-                </button>
-            </div>
-
-            <!-- LOG BOX -->
-            <div class="glass-panel p-2 rounded-xl flex flex-col h-56 md:h-72 min-h-0">
-                <h3 class="text-[11px] font-bold text-amber-400/80 uppercase tracking-wider mb-2 flex items-center space-x-1">
-                    <i data-lucide="history" class="w-3.5 h-3.5"></i>
-                    <span>თამაშის ისტორია</span>
-                </h3>
-                <div id="gameLog" class="flex-grow overflow-y-auto space-y-1.5 text-xs pr-1">
-                    <div class="text-amber-200/50 italic text-[11px]">თამაში დაიწყო. წარმატებები!</div>
-                </div>
-            </div>
-
-        </section>
-
-        <!-- CENTER PANEL: BOARD & RACK -->
-        <section class="flex flex-col gap-1.5 items-center order-1 lg:order-2 min-w-0 w-full">
-            
-            <!-- SCRABBLE BOARD CONTAINER -->
-            <div class="wood-frame board-wrap">
-                <div id="board" class="scrabble-board w-full aspect-square">
-                    <!-- Board cells dynamically rendered in JS -->
-                </div>
-            </div>
-
-            <!-- PLAYER TILE RACK -->
-            <div class="board-wrap flex flex-col items-center gap-1">
-                <div class="text-[11px] text-amber-300/70 font-semibold flex flex-wrap justify-center items-center gap-2">
-                    <span id="rackOwner">თქვენი ასოები:</span>
-                    <button onclick="shuffleRack()" class="px-2 py-0.5 rounded-lg border border-amber-600/30 text-amber-200 hover:bg-amber-900/60">შერევა</button>
-                    <span id="pendingScore" class="text-amber-400 font-bold hidden">(მიმდინარე: +0 ქულა)</span>
-                    <span id="turnTimer" class="hidden"></span>
-                </div>
-                <div id="rack" class="rack-container w-full min-h-[52px] flex items-center justify-center gap-1 md:gap-1.5">
-                    <!-- Rack tiles rendered in JS -->
-                </div>
-            </div>
-
-        </section>
-
-    </main>
-
-    <!-- FOOTER -->
-    <footer class="max-w-[1400px] w-full mx-auto mt-1 text-center text-[10px] text-amber-200/40 py-1">
-        ქართული სკრაბლი &copy; 2026
-    </footer>
-
-    <!-- RULES MODAL -->
-    <div id="rulesModal" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
-        <div class="glass-panel max-w-lg w-full p-6 rounded-2xl relative max-h-[85vh] overflow-y-auto">
-            <button onclick="closeModal('rulesModal')" class="absolute top-4 right-4 text-amber-400 hover:text-amber-200">
-                <i data-lucide="x" class="w-6 h-6"></i>
-            </button>
-            <h2 class="text-xl font-bold text-amber-300 mb-4 flex items-center gap-2">
-                <i data-lucide="book-open" class="w-5 h-5"></i>
-                თამაშის წესები
-            </h2>
-            <div class="text-sm text-amber-100/80 space-y-3 leading-relaxed">
-                <p><strong class="text-amber-300">მიზანი:</strong> შეადგინეთ ქართული სიტყვები დაფაზე და დააგროვეთ მაქსიმალური ქულა.</p>
-                <p><strong class="text-amber-300">ხმოვნების ბალანსი:</strong> თამაში ავტომატურად გაძლევთ ხელში მინიმუმ 2 და მაქსიმუმ 4 ხმოვანს (`ა`, `ე`, `ი`, `ო`, `უ`), რათა სიტყვის აწყობა ყოველთვის შესაძლებელი იყოს.</p>
-                <p><strong class="text-amber-300">სიტყვების ვალიდაცია:</strong> სიტყვა მიიღება მხოლოდ მაშინ, თუ ის ზუსტად არის ლექსიკონში (ბრუნვებისა და ფორმების ჩათვლით). დაფაზე ყველა წარმოქმნილი სიტყვა, მათ შორის გადამკვეთი, უნდა იყოს ვალიდური. 2-ასოიანი სიტყვები: მხოლოდ მცირე, ხელით შერჩეული სია.</p>
-                <p><strong class="text-amber-300">დასრულება:</strong> თამაში მთავრდება, როცა ტომარა და ერთ-ერთი მოთამაშის ასოები ამოიწურება, ან ყველა ზედიზედ 2-ჯერ გაატარებს სვლას. დარჩენილი ასოების ქულა აკლდება მფლობელს და ემატება გამარჯვებულს.</p>
-                <p><strong class="text-amber-300">დრო:</strong> თითო სვლაზე გაქვთ 2 წუთი. თუ ვერ მოასწარით, დაფაზე დადებული ასოები უკან დაგიბრუნდებათ და სვლა შემდეგ მოთამაშეზე გადადის.</p>
-                <p><strong class="text-amber-300">პირველი სვლა:</strong> პირველი სიტყვა აუცილებლად უნდა გაიაროს დაფის ცენტრალურ უჯრაზე (★).</p>
-                <div class="p-3 bg-amber-950/50 rounded-xl border border-amber-500/20 text-xs space-y-1">
-                    <div class="font-bold text-amber-300 mb-1">ბონუს უჯრები:</div>
-                    <div class="text-sky-300">● DL (ორმაგი ასო) - ასოს ქულა ორმაგდება</div>
-                    <div class="text-blue-400 font-bold">● TL (სამმაგი ასო) - ასოს ქულა სამმაგდება</div>
-                    <div class="text-rose-300">● DW (ორმაგი სიტყვა) - მთელი სიტყვის ქულა ორმაგდება</div>
-                    <div class="text-red-400 font-bold">● TW (სამმაგი სიტყვა) - მთელი სიტყვის ქულა სამმაგდება</div>
-                </div>
-            </div>
+        <div id="cd" class="countdown hidden"></div>
+        <div class="stopwrap">
+          <button class="stamp" id="stop" disabled>სტოპ</button>
+          <span class="hint" id="hint">შეავსე ყველა გრაფა, რომ „სტოპის“ დაჭერა შეგეძლოს</span>
         </div>
-    </div>
-
-    <!-- DICTIONARY SEARCH MODAL -->
-    <div id="dictModal" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
-        <div class="glass-panel max-w-md w-full p-6 rounded-2xl relative">
-            <button onclick="closeModal('dictModal')" class="absolute top-4 right-4 text-amber-400 hover:text-amber-200">
-                <i data-lucide="x" class="w-6 h-6"></i>
-            </button>
-            <h2 class="text-xl font-bold text-amber-300 mb-4 flex items-center gap-2">
-                <i data-lucide="search" class="w-5 h-5"></i>
-                ქართული ლექსიკონი
-            </h2>
-            <div class="space-y-4">
-                <p class="text-xs text-amber-200/70">შემოწმეთ, არის თუ არა სიტყვა თამაშის ოფიციალურ ბაზაში:</p>
-                <div class="flex gap-2">
-                    <input type="text" id="dictInput" placeholder="ჩაწერეთ სიტყვა..." class="flex-grow bg-amber-950/80 border border-amber-500/40 rounded-xl px-3 py-2 text-amber-100 placeholder-amber-200/40 focus:outline-none focus:border-amber-400 text-sm">
-                    <button onclick="checkDictWord()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-amber-950 font-bold text-sm rounded-xl transition">
-                        შემოწმება
-                    </button>
-                </div>
-                <div id="dictResult" class="min-h-[40px] text-sm flex items-center justify-center rounded-xl p-2"></div>
-            </div>
-        </div>
-    </div>
-
-    <div id="gameOverModal" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
-        <div class="glass-panel max-w-sm w-full p-6 rounded-2xl text-center">
-            <h2 class="text-xl font-bold text-amber-300 mb-3">თამაში დასრულდა</h2>
-            <div id="finalList" class="space-y-2 mb-4 text-sm"></div>
-            <div class="flex gap-2">
-                <button onclick="closeModal('gameOverModal')" class="flex-1 py-2 rounded-xl border border-amber-500/30 text-amber-200 text-sm font-bold">დახურვა</button>
-                <button onclick="exitToMenu()" class="flex-1 py-2 rounded-xl bg-amber-600 text-amber-950 text-sm font-black">ახალი თამაში</button>
-            </div>
-        </div>
-    </div>
-    <div id="leaveModal" class="fixed inset-0 bg-black/90 hidden z-[60] flex items-center justify-center p-4">
-        <div class="glass-panel max-w-sm w-full p-6 rounded-2xl text-center">
-            <h2 class="text-xl font-bold text-amber-300 mb-2">გსურთ დატოვოთ თამაში?</h2>
-            <p id="leaveText" class="text-xs text-amber-200/60 mb-4">მიმდინარე თამაში დასრულდება.</p>
-            <div class="flex gap-2">
-                <button onclick="closeModal('leaveModal')" class="flex-1 py-2.5 rounded-xl border border-amber-500/30 text-amber-200 text-sm font-bold">დარჩენა</button>
-                <button onclick="exitToMenu()" class="flex-1 py-2.5 rounded-xl bg-amber-600 text-amber-950 text-sm font-black">დატოვება</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        const GEORGIAN_LETTERS = {
-            'ა': { score: 1, count: 10, isVowel: true },
-            'ბ': { score: 2, count: 4, isVowel: false },
-            'გ': { score: 2, count: 4, isVowel: false },
-            'დ': { score: 2, count: 4, isVowel: false },
-            'ე': { score: 1, count: 8, isVowel: true },
-            'ვ': { score: 3, count: 3, isVowel: false },
-            'ზ': { score: 4, count: 2, isVowel: false },
-            'თ': { score: 2, count: 4, isVowel: false },
-            'ი': { score: 1, count: 8, isVowel: true },
-            'კ': { score: 3, count: 3, isVowel: false },
-            'ლ': { score: 2, count: 4, isVowel: false },
-            'მ': { score: 2, count: 4, isVowel: false },
-            'ნ': { score: 1, count: 7, isVowel: false },
-            'ო': { score: 1, count: 7, isVowel: true },
-            'პ': { score: 5, count: 2, isVowel: false },
-            'ჟ': { score: 8, count: 1, isVowel: false },
-            'რ': { score: 1, count: 6, isVowel: false },
-            'ს': { score: 2, count: 5, isVowel: false },
-            'ტ': { score: 3, count: 3, isVowel: false },
-            'უ': { score: 2, count: 4, isVowel: true },
-            'ფ': { score: 4, count: 2, isVowel: false },
-            'ქ': { score: 3, count: 3, isVowel: false },
-            'ღ': { score: 4, count: 2, isVowel: false },
-            'ყ': { score: 5, count: 2, isVowel: false },
-            'შ': { score: 3, count: 3, isVowel: false },
-            'ჩ': { score: 4, count: 2, isVowel: false },
-            'ც': { score: 4, count: 2, isVowel: false },
-            'ძ': { score: 6, count: 2, isVowel: false },
-            'წ': { score: 3, count: 3, isVowel: false },
-            'ჭ': { score: 6, count: 2, isVowel: false },
-            'ხ': { score: 3, count: 3, isVowel: false },
-            'ჯ': { score: 6, count: 2, isVowel: false },
-            'ჰ': { score: 8, count: 1, isVowel: false }
-        };
-
-        const VOWELS = ['ა', 'ე', 'ი', 'ო', 'უ'];
-
-        let audioCtx = null;
-        let soundEnabled = true;
-
-        function initAudio() {
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-
-        function playSound(type) {
-            if (!soundEnabled) return;
-            try {
-                initAudio();
-                const now = audioCtx.currentTime;
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-
-                if (type === 'place') {
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(400, now);
-                    osc.frequency.exponentialRampToValueAtTime(120, now + 0.05);
-                    gain.gain.setValueAtTime(0.2, now);
-                    gain.gain.linearRampToValueAtTime(0.01, now + 0.05);
-                    osc.start(now);
-                    osc.stop(now + 0.05);
-                } else if (type === 'score') {
-                    [523.25, 659.25, 783.99].forEach((freq, idx) => {
-                        const o = audioCtx.createOscillator();
-                        const g = audioCtx.createGain();
-                        o.type = 'sine';
-                        o.frequency.setValueAtTime(freq, now + idx * 0.06);
-                        g.gain.setValueAtTime(0.12, now + idx * 0.06);
-                        g.gain.linearRampToValueAtTime(0.001, now + idx * 0.06 + 0.3);
-                        o.connect(g);
-                        g.connect(audioCtx.destination);
-                        o.start(now + idx * 0.06);
-                        o.stop(now + idx * 0.06 + 0.3);
-                    });
-                } else if (type === 'error') {
-                    osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(220, now);
-                    osc.frequency.setValueAtTime(180, now + 0.08);
-                    gain.gain.setValueAtTime(0.15, now);
-                    gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
-                    osc.start(now);
-                    osc.stop(now + 0.15);
-                }
-            } catch (e) {}
-        }
-
-        function toggleSound() {
-            soundEnabled = !soundEnabled;
-            const icon = document.getElementById('soundIcon');
-            icon.setAttribute('data-lucide', soundEnabled ? 'volume-2' : 'volume-x');
-            lucide.createIcons();
-            if (soundEnabled) playSound('place');
-        }
-
-        const PREMIUM_TILES = {
-            '0,0':'TW', '0,7':'TW', '0,14':'TW', '7,0':'TW', '7,14':'TW', '14,0':'TW', '14,7':'TW', '14,14':'TW',
-            '1,1':'DW', '2,2':'DW', '3,3':'DW', '4,4':'DW', '10,10':'DW', '11,11':'DW', '12,12':'DW', '13,13':'DW',
-            '1,13':'DW', '2,12':'DW', '3,11':'DW', '4,10':'DW', '10,4':'DW', '11,3':'DW', '12,2':'DW', '13,1':'DW',
-            '1,5':'TL', '1,9':'TL', '5,1':'TL', '5,5':'TL', '5,9':'TL', '5,13':'TL',
-            '9,1':'TL', '9,5':'TL', '9,9':'TL', '9,13':'TL', '13,5':'TL', '13,9':'TL',
-            '0,3':'DL', '0,11':'DL', '2,6':'DL', '2,8':'DL', '3,0':'DL', '3,7':'DL', '3,14':'DL',
-            '6,2':'DL', '6,6':'DL', '6,8':'DL', '6,12':'DL', '7,3':'DL', '7,11':'DL',
-            '8,2':'DL', '8,6':'DL', '8,8':'DL', '8,12':'DL', '11,0':'DL', '11,7':'DL', '11,14':'DL',
-            '12,6':'DL', '12,8':'DL', '14,3':'DL', '14,11':'DL',
-            '7,7':'CENTER'
-        };
-
-        /* ===== DICTIONARY (words.js / words.txt only — no guessed morphology) ===== */
-        let WORDS = [], DICT = new Set(), dictReady = false, FULL = null, COMMON = null;
-        const useDict = d => { WORDS = d.words; DICT = d.set; };
-        function mkDict(raw) {
-            const set = new Set();
-            for (const line of raw.split(/\r?\n/)) {
-                const w = line.trim().split(/\s+/)[0];
-                if (w && w.length >= 2 && /^[ა-ჰ]+$/.test(w)) set.add(w);
-            }
-            return { words: Array.from(set).sort(), set };
-        }
-
-        function setDictStatus(txt, cls) {
-            const el = document.getElementById('dictStatus');
-            if (el) { el.textContent = txt; el.className = 'text-[11px] ' + cls; }
-        }
-
-        async function loadDictionary() {
-            let raw = window.WORDS_RAW;
-            if (!raw) {
-                try { raw = await (await fetch('words.txt')).text(); } catch (e) { /* ignore */ }
-            }
-            if (!raw) { setDictStatus('ლექსიკონი ვერ ჩაიტვირთა: words.js ან words.txt ფაილი index.html-ის გვერდით უნდა იდოს', 'text-red-400'); return; }
-            FULL = mkDict(raw);
-            COMMON = FULL;   // ბოტიც და მოთამაშეც ერთსა და იმავე სიას იყენებს
-            useDict(FULL);
-            dictReady = true;
-            setDictStatus(`ლექსიკონი მზადაა: ${FULL.words.length.toLocaleString()} სიტყვა`, 'text-emerald-400');
-        }
-
-        const isWord = w => DICT.has(w);
-        function hasPrefix(p) {
-            let lo = 0, hi = WORDS.length;
-            while (lo < hi) { const m = (lo + hi) >> 1; if (WORDS[m] < p) lo = m + 1; else hi = m; }
-            return lo < WORDS.length && WORDS[lo].startsWith(p);
-        }
-
-        /* ===== GAME STATE ===== */
-        const BOARD_SIZE = 15;
-        let boardState, tempPlacedTiles = [], tileBag = [], players = [], currentTurnIndex = 0;
-        let selectedRackTileId = null, isFirstMove = true, selectedBotCount = 1, botLevel = 2;
-        let gameMode = 'ai', gameActive = false, gameOver = false;
-        let usedWords = new Set(), passStreak = 0, gameId = 0, lastMove = new Set(), cellEls = [];
-
-        const cur = () => players[currentTurnIndex];
-        const viewer = () => (gameMode === 'lan' ? players[myIdx] : players[0]);
-        const canAct = () => gameActive && !gameOver && !cur().isBot && (gameMode !== 'lan' || currentTurnIndex === myIdx);
-
-        /* ===== TILE BAG ===== */
-        function shuffle(arr) {
-            for (let i = arr.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [arr[i], arr[j]] = [arr[j], arr[i]];
-            }
-        }
-        function initTileBag() {
-            tileBag = [];
-            let id = 1;
-            for (const ch in GEORGIAN_LETTERS) {
-                for (let i = 0; i < GEORGIAN_LETTERS[ch].count; i++) tileBag.push({ id: `tile-${id++}`, letter: ch, score: GEORGIAN_LETTERS[ch].score });
-            }
-            shuffle(tileBag);
-        }
-        const vowelCount = rack => rack.filter(t => VOWELS.includes(t.letter)).length;
-
-        function drawBalancedTiles(existing = [], target = 7) {
-            const need = Math.min(target - existing.length, tileBag.length);
-            if (need <= 0) return existing;
-            const drawn = tileBag.splice(tileBag.length - need, need);
-            for (let a = 0; a < 30; a++) {
-                const v = vowelCount([...existing, ...drawn]);
-                if (v >= 2 && v <= 4) break;
-                const wantVowel = v < 2;
-                const di = drawn.findIndex(t => VOWELS.includes(t.letter) !== wantVowel);
-                const bi = tileBag.findIndex(t => VOWELS.includes(t.letter) === wantVowel);
-                if (di === -1 || bi === -1) break;
-                const out = drawn.splice(di, 1)[0];
-                drawn.push(tileBag.splice(bi, 1)[0]);
-                tileBag.push(out);
-                shuffle(tileBag);
-            }
-            return [...existing, ...drawn];
-        }
-
-        /* ===== MENU ===== */
-        const ON = "bg-amber-900/60 border-amber-500/40 text-amber-200 shadow-md", OFF = "bg-amber-950/40 border-amber-500/20 text-amber-200/60";
-        function setGroup(prefix, n, count) {
-            for (let i = 1; i <= count; i++) {
-                const b = document.getElementById(prefix + i);
-                if (b) b.className = `py-2.5 rounded-xl border text-xs font-bold transition ${i === n ? ON : OFF}`;
-            }
-        }
-        function selectGameMode(mode) {
-            gameMode = mode;
-            const act = "py-3 px-2 rounded-xl font-bold text-xs transition flex items-center justify-center space-x-1 bg-gradient-to-r from-amber-600 to-amber-700 text-amber-950 shadow-md";
-            const off = "py-3 px-2 rounded-xl font-bold text-xs transition flex items-center justify-center space-x-1 text-amber-200 hover:bg-amber-900/40";
-            const ids = { ai: 'modeAiBtn', lan: 'modeNetBtn' }, opts = { ai: 'aiOptions', lan: 'netOptions' };
-            for (const k in ids) {
-                document.getElementById(ids[k]).className = k === mode ? act : off;
-                document.getElementById(opts[k]).classList.toggle('hidden', k !== mode);
-            }
-            if (mode === 'lan') {
-                if (location.protocol === 'file:') document.getElementById('netServer').classList.remove('hidden');
-                netWatch();
-            } else if (!gameActive) netReset();
-            updateNetUI();
-        }
-        function setBotCount(n) { selectedBotCount = n; setGroup('botCount', n, 3); }
-        function setBotLevel(n) { botLevel = n; setGroup('botLevel', n, 3); }
-
-        /* ===== LEAVE GAME ===== */
-        function askLeave() {
-            if (gameActive && !gameOver) {
-                document.getElementById('leaveText').textContent = (gameMode === 'lan' && isHost)
-                    ? 'თქვენ მასპინძელი ხართ — გასვლით თამაში ყველა მოთამაშისთვის დასრულდება.'
-                    : 'მიმდინარე თამაში დასრულდება.';
-                openModal('leaveModal');
-            } else exitToMenu();
-        }
-        function exitToMenu() {
-            ['gameOverModal', 'rulesModal', 'dictModal', 'leaveModal'].forEach(closeModal);
-            gameId++; gameActive = false; gameOver = false; tempPlacedTiles = [];
-            stopTurnTimer();
-            document.getElementById('mainMenu').classList.remove('hidden');
-            document.body.classList.remove('game-active');
-            if (gameMode === 'lan') { netReset(); netMsg(''); netWatch(); } else netReset();
-            updateNetUI();
-        }
-
-        function startGame() {
-            if (!dictReady) { alert('ლექსიკონი ჯერ არ ჩატვირთულა'); return; }
-            if (gameMode === 'lan' && !netCanStart()) return;
-            gameId++;
-            document.getElementById('mainMenu').classList.add('hidden');
-            closeModal('gameOverModal');
-            initBoardUI();
-            initTileBag();
-            const mk = (name, isBot) => ({ name, isBot, score: 0, rack: drawBalancedTiles([], 7) });
-            players = [];
-            if (gameMode === 'ai') {
-                players.push(mk('თქვენ', false));
-                for (let i = 1; i <= selectedBotCount; i++) players.push(mk(`ბოტი ${i}`, true));
-            } else if (gameMode === 'lan') {
-                lobby.forEach(m => players.push(mk(m.name, false)));
-                lanIds = lobby.map(m => m.id); myIdx = 0; lanStarted = true;
-            }
-            boardState = Array.from({ length: 15 }, () => Array(15).fill(null));
-            tempPlacedTiles = []; selectedRackTileId = null; lastMove = new Set();
-            currentTurnIndex = 0; isFirstMove = true; passStreak = 0; usedWords = new Set();
-            gameOver = false; gameActive = true;
-            document.body.classList.add('game-active');
-            document.getElementById('gameLog').innerHTML = '<div class="text-amber-200/50 italic text-[11px]">თამაში დაიწყო. წარმატებები!</div>';
-            startTurnTimer();
-            renderAll();
-            playSound('place');
-        }
-
-        /* ===== RENDERING ===== */
-        function premLabel(r, c) {
-            const p = PREMIUM_TILES[`${r},${c}`];
-            return p === 'CENTER' ? '★' : (p || '');
-        }
-        function initBoardUI() {
-            const boardEl = document.getElementById('board');
-            boardEl.innerHTML = '';
-            cellEls = [];
-            const cls = { TW: 'cell-tw', DW: 'cell-dw', TL: 'cell-tl', DL: 'cell-dl', CENTER: 'cell-center' };
-            for (let r = 0; r < BOARD_SIZE; r++) {
-                cellEls.push([]);
-                for (let c = 0; c < BOARD_SIZE; c++) {
-                    const cell = document.createElement('div');
-                    cell.className = 'cell ' + (cls[PREMIUM_TILES[`${r},${c}`]] || 'cell-normal');
-                    cell.dataset.r = r; cell.dataset.c = c;
-                    cell.addEventListener('dragover', handleDragOver);
-                    cell.addEventListener('dragleave', handleDragLeave);
-                    cell.addEventListener('drop', handleDrop);
-                    cell.addEventListener('click', () => handleCellClick(r, c));
-                    boardEl.appendChild(cell);
-                    cellEls[r].push(cell);
-                }
-            }
-        }
-        function renderBoard() {
-            for (let r = 0; r < BOARD_SIZE; r++) for (let c = 0; c < BOARD_SIZE; c++) {
-                const el = cellEls[r][c];
-                const tmp = tempPlacedTiles.find(t => t.r === r && t.c === c);
-                const L = boardState[r][c] || (tmp && tmp.letter);
-                if (L) {
-                    const cls = tmp ? 'tile-temp' : (lastMove.has(`${r},${c}`) ? 'tile-last' : '');
-                    el.innerHTML = `<div class="tile w-full h-full text-base md:text-xl lg:text-2xl ${cls}"><span>${L}</span><span class="tile-score">${GEORGIAN_LETTERS[L].score}</span></div>`;
-                    if (tmp && canAct()) {
-                        const t = el.firstElementChild;
-                        t.draggable = true;
-                        t.style.cursor = 'grab';
-                        t.addEventListener('dragstart', e => {
-                            e.dataTransfer.setData('text/plain', `board:${r},${c}`);
-                            e.dataTransfer.effectAllowed = 'move';
-                            setTimeout(() => { t.style.opacity = '0.35'; }, 0);
-                        });
-                        t.addEventListener('dragend', e => {
-                            t.style.opacity = '';
-                            if (e.dataTransfer.dropEffect === 'none') returnTempToRack(r, c);   // ჩავარდა არსად => უკან ხელში
-                        });
-                    }
-                } else el.textContent = premLabel(r, c);
-            }
-        }
-        function renderScoreboard() {
-            const listEl = document.getElementById('playersList');
-            listEl.innerHTML = '';
-            players.forEach((p, idx) => {
-                const isCur = idx === currentTurnIndex && !gameOver;
-                const card = document.createElement('div');
-                card.className = `p-1.5 rounded-lg border flex justify-between items-center transition-all ${isCur ? 'bg-amber-900/40 border-amber-400/60 shadow-lg' : 'bg-amber-950/20 border-amber-500/10'}`;
-                card.innerHTML = `
-                    <div class="flex items-center space-x-2.5">
-                        <div class="w-7 h-7 rounded-lg ${p.isBot ? 'bg-amber-900/40 border-amber-500/30' : 'bg-amber-500/20 border-amber-400/40'} border flex items-center justify-center">
-                            <i data-lucide="${p.isBot ? 'bot' : 'user'}" class="w-3.5 h-3.5 text-amber-300"></i>
-                        </div>
-                        <div><div class="text-xs text-amber-200/80 font-semibold">${p.name}</div>
-                        <div class="text-base font-black text-amber-300">${p.score}</div></div>
-                    </div>
-                    ${isCur ? '<span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30 font-bold">სვლა</span>' : ''}`;
-                listEl.appendChild(card);
-            });
-            if (window.lucide) lucide.createIcons();
-        }
-        function renderRack() {
-            const rackEl = document.getElementById('rack');
-            rackEl.innerHTML = '';
-            const v = viewer();
-            document.getElementById('rackOwner').textContent = 'თქვენი ასოები:';
-            rackEl.style.opacity = (!canAct() && !gameOver) ? '0.55' : '1';
-            v.rack.forEach(tile => {
-                const d = document.createElement('div');
-                d.className = `tile w-10 h-10 md:w-12 md:h-12 text-lg md:text-xl ${selectedRackTileId === tile.id ? 'selected' : ''}`;
-                d.draggable = true;
-                d.innerHTML = `<span>${tile.letter}</span><span class="tile-score">${tile.score}</span>`;
-                d.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', tile.id); selectedRackTileId = tile.id; });
-                d.addEventListener('click', () => {
-                    if (!canAct()) return;
-                    selectedRackTileId = selectedRackTileId === tile.id ? null : tile.id;
-                    renderRack();
-                });
-                rackEl.appendChild(d);
-            });
-        }
-        function updateBagCount() { document.getElementById('bagCount').innerText = tileBag.length; }
-        function renderAll() { renderBoard(); renderScoreboard(); renderRack(); updateBagCount(); calculatePendingScore(); updateTimerUI(); if (gameMode === 'lan' && isHost) syncAll(); }
-        function shuffleRack() { if (!gameActive) return; shuffle(viewer().rack); renderRack(); }
-
-        /* ===== PLACEMENT ===== */
-        function handleDragOver(e) {
-            e.preventDefault();
-            if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
-            e.currentTarget.classList.add('drag-over');
-        }
-        function handleDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
-        function handleDrop(e) {
-            e.preventDefault();
-            e.currentTarget.classList.remove('drag-over');
-            const raw = e.dataTransfer.getData('text/plain');
-            const r = +e.currentTarget.dataset.r, c = +e.currentTarget.dataset.c;
-            if (raw.startsWith('board:')) {                       // დაფაზე უკვე ჩასმული ასოს გადატანა
-                const [fr, fc] = raw.slice(6).split(',').map(Number);
-                moveTempTile(fr, fc, r, c);
-                return;
-            }
-            const id = raw || selectedRackTileId;
-            if (id && canPlaceTileAt(r, c)) placeTileOnBoard(id, r, c);
-        }
-        function moveTempTile(fr, fc, r, c) {
-            if (!canAct() || (fr === r && fc === c) || !canPlaceTileAt(r, c)) return;
-            const t = tempPlacedTiles.find(x => x.r === fr && x.c === fc);
-            if (!t) return;
-            t.r = r; t.c = c;
-            renderBoard(); calculatePendingScore(); playSound('place');
-        }
-        function returnTempToRack(r, c) {
-            if (!canAct()) return;
-            const i = tempPlacedTiles.findIndex(t => t.r === r && t.c === c);
-            if (i === -1) return;
-            const t = tempPlacedTiles.splice(i, 1)[0];
-            cur().rack.push({ id: t.tileId, letter: t.letter, score: GEORGIAN_LETTERS[t.letter].score });
-            renderBoard(); renderRack(); calculatePendingScore(); playSound('place');
-        }
-        function handleCellClick(r, c) {
-            if (!canAct()) return;
-            if (tempPlacedTiles.some(t => t.r === r && t.c === c)) return returnTempToRack(r, c);
-            if (selectedRackTileId && canPlaceTileAt(r, c)) placeTileOnBoard(selectedRackTileId, r, c);
-        }
-        function canPlaceTileAt(r, c) {
-            return canAct() && boardState[r][c] === null && !tempPlacedTiles.some(t => t.r === r && t.c === c);
-        }
-        function placeTileOnBoard(tileId, r, c) {
-            const rack = cur().rack;
-            const i = rack.findIndex(t => t.id === tileId);
-            if (i === -1) return;
-            const tile = rack.splice(i, 1)[0];
-            tempPlacedTiles.push({ r, c, letter: tile.letter, tileId: tile.id });
-            selectedRackTileId = null;
-            renderBoard(); renderRack(); calculatePendingScore(); playSound('place');
-        }
-        function recallTiles() {
-            if (!tempPlacedTiles.length) return;
-            tempPlacedTiles.forEach(t => cur().rack.push({ id: t.tileId, letter: t.letter, score: GEORGIAN_LETTERS[t.letter].score }));
-            tempPlacedTiles = [];
-            renderBoard(); renderRack(); calculatePendingScore();
-        }
-        function recallClick() { if (canAct()) { recallTiles(); playSound('place'); } }
-
-        /* ===== VALIDATION & SCORING ===== */
-        function wordAt(g, r, c, dr, dc) {
-            let sr = r, sc = c;
-            while (sr - dr >= 0 && sc - dc >= 0 && g[sr - dr][sc - dc] !== null) { sr -= dr; sc -= dc; }
-            const cells = [];
-            let rr = sr, cc = sc;
-            while (rr < 15 && cc < 15 && g[rr][cc] !== null) { cells.push([rr, cc]); rr += dr; cc += dc; }
-            return { cells, str: cells.map(([a, b]) => g[a][b]).join('') };
-        }
-        function scoreWord(w, placedSet) {
-            let sum = 0, mult = 1;
-            for (const [r, c] of w.cells) {
-                let s = GEORGIAN_LETTERS[boardLetter(r, c, w)].score;
-                if (placedSet.has(`${r},${c}`)) {
-                    const p = PREMIUM_TILES[`${r},${c}`];
-                    if (p === 'DL') s *= 2; else if (p === 'TL') s *= 3;
-                    else if (p === 'DW' || p === 'CENTER') mult *= 2; else if (p === 'TW') mult *= 3;
-                }
-                sum += s;
-            }
-            return sum * mult;
-        }
-        function boardLetter(r, c, w) { return w.grid[r][c]; }
-
-        function validatePlacement(placed) {
-            const bad = error => ({ valid: false, error });
-            if (!placed.length) return bad('ასოები არ არის დასმული');
-            const seen = new Set();
-            for (const t of placed) {
-                if (!Number.isInteger(t.r) || !Number.isInteger(t.c) || t.r < 0 || t.r > 14 || t.c < 0 || t.c > 14 || !GEORGIAN_LETTERS[t.letter] || boardState[t.r][t.c] !== null || seen.has(t.r + ',' + t.c)) return bad('არასწორი უჯრა');
-                seen.add(t.r + ',' + t.c);
-            }
-            const sameRow = placed.every(t => t.r === placed[0].r), sameCol = placed.every(t => t.c === placed[0].c);
-            if (!sameRow && !sameCol) return bad('ასოები უნდა იყოს ერთ ხაზზე');
-            const g = boardState.map(row => row.slice());
-            placed.forEach(t => { g[t.r][t.c] = t.letter; });
-            const multi = placed.length > 1;
-            const horiz = multi ? sameRow : null;
-            if (multi) {
-                const idx = placed.map(t => horiz ? t.c : t.r), lo = Math.min(...idx), hi = Math.max(...idx);
-                for (let k = lo; k <= hi; k++) if ((horiz ? g[placed[0].r][k] : g[k][placed[0].c]) === null) return bad('ასოებს შორის ცარიელი უჯრაა');
-            }
-            if (isFirstMove) {
-                if (!placed.some(t => t.r === 7 && t.c === 7)) return bad('პირველი სიტყვა ცენტრზე (★) უნდა დაისვას');
-                if (!multi) return bad('პირველი სიტყვა მინიმუმ 2 ასოსგან უნდა შედგებოდეს');
-            } else {
-                const touches = placed.some(t => [[-1, 0], [1, 0], [0, -1], [0, 1]].some(([a, b]) => {
-                    const r = t.r + a, c = t.c + b;
-                    return r >= 0 && r < 15 && c >= 0 && c < 15 && boardState[r][c] !== null;
-                }));
-                if (!touches) return bad('სიტყვა უნდა ებმოდეს არსებულ ასოებს');
-            }
-            let words = [];
-            if (multi) words.push(wordAt(g, placed[0].r, placed[0].c, horiz ? 0 : 1, horiz ? 1 : 0));
-            for (const t of placed) {
-                const dirs = multi ? [horiz ? [1, 0] : [0, 1]] : [[0, 1], [1, 0]];
-                for (const [dr, dc] of dirs) {
-                    const w = wordAt(g, t.r, t.c, dr, dc);
-                    if (w.cells.length >= 2) words.push(w);
-                }
-            }
-            if (!words.length) return bad('სიტყვა ვერ შედგა');
-
-            // 1) ერთი და იგივე ფიზიკური სიტყვა (იგივე უჯრები) მხოლოდ ერთხელ
-            // 2) ერთი და იგივე ტექსტი სხვადასხვა ადგილას — აკრძალულია
-            const seenCells = new Set();
-            const seenStr = new Set();
-            const uniqueWords = [];
-            for (const w of words) {
-                const cellKey = w.cells.map(([r, c]) => `${r},${c}`).sort().join('|');
-                if (seenCells.has(cellKey)) continue; // იგივე სიტყვა სხვა ასოდან — გამოტოვე
-                if (seenStr.has(w.str)) {
-                    return bad(`ერთ სვლაში ერთი და იგივე სიტყვა ორჯერ არ შეიძლება: "${w.str}"`);
-                }
-                seenCells.add(cellKey);
-                seenStr.add(w.str);
-                uniqueWords.push(w);
-            }
-            words = uniqueWords;
-
-            const placedSet = new Set(placed.map(t => `${t.r},${t.c}`));
-            let total = 0;
-            for (const w of words) {
-                if (!isWord(w.str)) return bad(`უცნობი სიტყვა: "${w.str}"`);
-                w.grid = g;
-                total += scoreWord(w, placedSet);
-            }
-            if (placed.length === 7) total += 50;
-            return { valid: true, score: total, words: words.map(w => w.str) };
-        }
-
-        function calculatePendingScore() {
-            const badge = document.getElementById('pendingScore');
-            if (!tempPlacedTiles.length) { badge.classList.add('hidden'); return; }
-            const v = validatePlacement(tempPlacedTiles);
-            badge.innerText = v.valid ? `(მიმდინარე: +${v.score} ქულა)` : `(${v.error})`;
-            badge.classList.remove('hidden');
-            badge.classList.toggle('text-amber-400', v.valid);
-            badge.classList.toggle('text-red-400', !v.valid);
-        }
-
-        /* ===== TURNS ===== */
-        function commitMove(player, placed, v) {
-            placed.forEach(t => { boardState[t.r][t.c] = t.letter; });
-            lastMove = new Set(placed.map(t => `${t.r},${t.c}`));
-            player.score += v.score;
-            v.words.forEach(w => usedWords.add(w));
-            logMessage(`${player.name} — <b>${v.words.join(', ')}</b> (+${v.score})`, player.isBot ? 'text-amber-400' : 'text-amber-300');
-            player.rack = drawBalancedTiles(player.rack, 7);
-            tempPlacedTiles = []; isFirstMove = false; passStreak = 0;
-            playSound('score');
-            if (!tileBag.length && !player.rack.length) return endGame(player);
-            nextTurn();
-        }
-        function submitWord() {
-            if (!canAct()) return;
-            const v = validatePlacement(tempPlacedTiles);
-            if (!v.valid) { playSound('error'); logMessage(`შეცდომა: ${v.error}`, 'text-red-400'); return; }
-            if (gameMode === 'lan' && !isHost) { netToHost({ k: 'submit', placed: tempPlacedTiles.map(t => ({ r: t.r, c: t.c, letter: t.letter })) }); return; }
-            commitMove(cur(), tempPlacedTiles.map(t => ({ r: t.r, c: t.c, letter: t.letter })), v);
-        }
-        function registerPass(msg) {
-            logMessage(msg, 'text-amber-200/60');
-            passStreak++;
-            if (passStreak >= players.length * 2) return endGame(null);
-            nextTurn();
-        }
-        function passTurn() {
-            if (!canAct()) return;
-            recallTiles();
-            if (gameMode === 'lan' && !isHost) { netToHost({ k: 'pass' }); return; }
-            registerPass(`${cur().name} გაატარა სვლა`);
-        }
-        function doSwap(p) {
-            const old = p.rack;
-            p.rack = drawBalancedTiles([], 7);
-            tileBag.push(...old);
-            shuffle(tileBag);
-        }
-        function swapTiles() {
-            if (!canAct()) return;
-            if (tileBag.length < 7) { logMessage('ტომარაში საკმარისი ასოები არ არის (მინიმუმ 7)', 'text-red-400'); return; }
-            recallTiles();
-            if (gameMode === 'lan' && !isHost) { netToHost({ k: 'swap' }); return; }
-            doSwap(cur());
-            registerPass(`${cur().name} შეცვალა ასოები`);
-        }
-        function nextTurn() {
-            currentTurnIndex = (currentTurnIndex + 1) % players.length;
-            tempPlacedTiles = []; selectedRackTileId = null;
-            startTurnTimer();
-            renderAll();
-            if (cur().isBot) { const id = gameId; setTimeout(() => { if (id === gameId) playBotTurn(); }, 700); }
-        }
-
-        /* ===== TURN TIMER (2 წუთი; მასპინძელი/ლოკალური თამაში წყვეტს, სტუმრები მხოლოდ აჩვენებენ) ===== */
-        const TURN_MS = 120000;
-        let turnDeadline = null, turnTick = null;
-        const turnLeft = () => (turnDeadline ? Math.max(0, turnDeadline - Date.now()) : 0);
-        function ensureTick() { if (!turnTick) turnTick = setInterval(timerTick, 250); }
-        function startTurnTimer() {
-            turnDeadline = (gameActive && !gameOver && players.length && !cur().isBot) ? Date.now() + TURN_MS : null;
-            ensureTick(); updateTimerUI();
-        }
-        function stopTurnTimer() { turnDeadline = null; updateTimerUI(); }
-        function timerTick() {
-            updateTimerUI();
-            if (turnDeadline && turnLeft() <= 0 && (gameMode !== 'lan' || isHost)) onTurnTimeout();
-        }
-        function onTurnTimeout() {
-            turnDeadline = null;
-            if (!gameActive || gameOver || cur().isBot) return;
-            recallTiles();
-            playSound('error');
-            registerPass(`${cur().name} — დრო ამოიწურა, სვლა გადავიდა`);
-        }
-        function updateTimerUI() {
-            const el = document.getElementById('turnTimer');
-            if (!el) return;
-            if (!turnDeadline || !gameActive || gameOver) { el.classList.add('hidden'); return; }
-            const sec = Math.ceil(turnLeft() / 1000), mine = canAct();
-            el.textContent = `⏱ ${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}${mine ? '' : ' · ' + cur().name}`;
-            el.className = 'text-[11px] font-bold px-2 py-0.5 rounded-lg border ' + (sec <= 15 && mine
-                ? 'text-red-300 border-red-500/50 bg-red-900/40 animate-pulse' : 'text-amber-300 border-amber-500/30 bg-amber-950/40');
-        }
-
-        function showFinal() {
-            const sorted = [...players].sort((a, b) => b.score - a.score);
-            document.getElementById('finalList').innerHTML = sorted.map((p, i) =>
-                `<div class="flex justify-between p-2 rounded-lg ${i === 0 ? 'bg-amber-500/20 border border-amber-400/40 text-amber-200 font-bold' : 'bg-amber-950/40 text-amber-200/80'}"><span>${i === 0 ? '🏆 ' : ''}${p.name}</span><span>${p.score}</span></div>`).join('');
-            openModal('gameOverModal');
-        }
-        function endGame(outPlayer) {
-            recallTiles();
-            gameOver = true; gameActive = false;
-            document.body.classList.remove('game-active');
-            stopTurnTimer();
-            let pool = 0;
-            players.forEach(p => {
-                const left = p.rack.reduce((s, t) => s + t.score, 0);
-                p.score -= left; pool += left;
-            });
-            if (outPlayer) outPlayer.score += pool;
-            renderAll();
-            showFinal();
-            openModal('gameOverModal');
-            playSound('score');
-        }
-
-        /* ===== BOT ===== */
-        function crossWordStr(r, c, letter, vertical) {
-            const dr = vertical ? 1 : 0, dc = vertical ? 0 : 1;
-            let s = letter, rr = r - dr, cc = c - dc;
-            while (rr >= 0 && cc >= 0 && boardState[rr][cc] !== null) { s = boardState[rr][cc] + s; rr -= dr; cc -= dc; }
-            rr = r + dr; cc = c + dc;
-            while (rr < 15 && cc < 15 && boardState[rr][cc] !== null) { s += boardState[rr][cc]; rr += dr; cc += dc; }
-            return s;
-        }
-
-        function genMoves(letters) {
-            const cnt = {};
-            letters.forEach(l => { cnt[l] = (cnt[l] || 0) + 1; });
-            const moves = [];
-            for (const horiz of [true, false]) {
-                for (let i = 0; i < 15; i++) {
-                    const rc = k => (horiz ? [i, k] : [k, i]);
-                    const cell = k => (horiz ? boardState[i][k] : boardState[k][i]);
-                    const anchor = Array(15).fill(false);
-                    let minA = 99, maxA = -1;
-                    for (let k = 0; k < 15; k++) {
-                        if (cell(k) !== null) continue;
-                        const [r, c] = rc(k);
-                        anchor[k] = isFirstMove ? (r === 7 && c === 7)
-                            : [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]].some(([a, b]) => a >= 0 && a < 15 && b >= 0 && b < 15 && boardState[a][b] !== null);
-                        if (anchor[k]) { minA = Math.min(minA, k); maxA = k; }
-                    }
-                    if (maxA < 0) continue;
-                    const okCache = {};
-                    const crossOk = (k, l) => {
-                        const key = k + l;
-                        if (key in okCache) return okCache[key];
-                        const [r, c] = rc(k);
-                        const s = crossWordStr(r, c, l, horiz);
-                        return (okCache[key] = s.length === 1 || isWord(s));
-                    };
-                    const dfs = (pos, word, placed, used) => {
-                        if ((pos >= 15 || cell(pos) === null) && used && word.length >= 2 && isWord(word)) {
-                            moves.push(placed.map(([k, l]) => { const [r, c] = rc(k); return { r, c, letter: l }; }));
-                        }
-                        if (pos >= 15) return;
-                        const ex = cell(pos);
-                        if (ex !== null) {
-                            if (hasPrefix(word + ex)) dfs(pos + 1, word + ex, placed, used);
-                            return;
-                        }
-                        for (const l in cnt) {
-                            if (cnt[l] <= 0 || !crossOk(pos, l) || !hasPrefix(word + l)) continue;
-                            cnt[l]--;
-                            placed.push([pos, l]);
-                            dfs(pos + 1, word + l, placed, used || anchor[pos]);
-                            placed.pop();
-                            cnt[l]++;
-                        }
-                    };
-                    for (let s = Math.max(0, minA - 7); s <= maxA; s++) {
-                        if (s > 0 && cell(s - 1) !== null) continue;
-                        dfs(s, '', [], false);
-                    }
-                }
-            }
-            return moves;
-        }
-
-        function playBotTurn() {
-            if (!gameActive || gameOver || !cur().isBot) return;
-            const bot = cur();
-            const scored = [];
-            useDict(COMMON);   // bot plays only common, well-attested words
-            try {
-                for (const m of genMoves(bot.rack.map(t => t.letter))) {
-                    const v = validatePlacement(m);
-                    if (v.valid) scored.push({ placed: m, v });
-                }
-            } finally { useDict(FULL); }
-            const fresh = scored.filter(m => m.v.words.every(w => !usedWords.has(w)));
-            if (fresh.length) { scored.length = 0; scored.push(...fresh); }   // avoid repeating already-played words
-            scored.sort((a, b) => b.v.score - a.v.score);
-            if (scored.length) {
-                const n = scored.length;
-                const pick = botLevel === 3 ? Math.floor(Math.random() * Math.min(3, n)) : botLevel === 2 ? Math.floor(Math.random() * Math.min(5, n))
-                    : Math.floor(n / 2 + Math.random() * (n - Math.floor(n / 2)));
-                const mv = scored[Math.min(pick, n - 1)];
-                mv.placed.forEach(t => {
-                    const i = bot.rack.findIndex(x => x.letter === t.letter);
-                    if (i !== -1) bot.rack.splice(i, 1);
-                });
-                return commitMove(bot, mv.placed, mv.v);
-            }
-            if (tileBag.length >= 7) { doSwap(bot); registerPass(`${bot.name} შეცვალა ასოები`); }
-            else registerPass(`${bot.name} გაატარა სვლა`);
-        }
-
-
-        /* ===== LAN (host-authoritative; server.js only relays) ===== */
-        let ws = null, isHost = false, myIdx = 0, roomCode = '', lobby = [], lanIds = [], pendingLogs = [], lanStarted = false, rooms = [], wsQueue = [];
-        const $ = id => document.getElementById(id);
-        const esc = x => String(x).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-
-        function netMsg(t, bad) { $('netStatus').innerHTML = t ? `<div class="${bad ? 'text-red-400' : 'text-emerald-400'}">${t}</div>` : ''; }
-        const netName = () => ($('netName').value.trim() || 'მოთამაშე');
-        const netSend = o => { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); };
-        const netToHost = data => netSend({ t: 'toHost', data });
-
-        function renderLobby() {
-            const el = $('netLobby');
-            if (!roomCode) { el.innerHTML = ''; return; }
-            const hint = isHost ? (lobby.length < 2 ? 'ელოდებით მოთამაშეებს... თქვენი მაგიდა სხვებს სიაში გამოუჩნდებათ.' : 'როცა მზად ხართ, დაიწყეთ თამაში.') : 'ელოდებით, სანამ მასპინძელი თამაშს დაიწყებს.';
-            el.innerHTML = `<div class="text-amber-300 font-bold mb-1">მაგიდა (${lobby.length}/4)</div>` +
-                lobby.map((m, i) => `<div class="text-amber-100">• ${esc(m.name)}${i === 0 ? ' <span class="text-amber-400/70">(მასპინძელი)</span>' : ''}</div>`).join('') +
-                `<div class="mt-2 text-amber-200/60">${hint}</div>`;
-        }
-        function renderTables() {
-            const el = $('netTables');
-            el.innerHTML = rooms.length ? rooms.map(r =>
-                `<div class="flex items-center justify-between p-2 rounded-xl bg-amber-950/40 border border-amber-500/20 text-xs"><span class="text-amber-100">${esc(r.host)}-ს მაგიდა <span class="text-amber-300/70">· ${r.n}/4</span></span><button onclick="netJoinRoom('${esc(r.code)}')" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-amber-950 font-bold rounded-lg">შესვლა</button></div>`).join('')
-                : '<div class="text-[11px] text-amber-200/40 italic">ღია მაგიდა ჯერ არ არის — შექმენით თქვენი</div>';
-        }
-        function updateNetUI() {
-            if (!$('netIdle')) return;
-            const lan = gameMode === 'lan', inRoom = !!roomCode;
-            $('netIdle').classList.toggle('hidden', inRoom);
-            $('netRoom').classList.toggle('hidden', !inRoom);
-            const btn = $('startGameBtn'), wait = lan && isHost && inRoom && lobby.length < 2;
-            btn.classList.toggle('hidden', lan && !(inRoom && isHost));
-            btn.disabled = wait; btn.classList.toggle('opacity-50', wait);
-            $('startBtnText').innerText = wait ? 'ელოდებით მოთამაშეს...' : 'თამაშის დაწყება';
-        }
-
-        function netReset() {
-            if (ws) { ws.onclose = null; ws.onmessage = null; try { ws.close(); } catch (e) { } }
-            ws = null; wsQueue = []; roomCode = ''; lobby = []; rooms = []; lanStarted = false; isHost = false; pendingLogs = [];
-            if ($('netTables')) { renderTables(); renderLobby(); }
-        }
-        function netEnsure(cb) {
-            if (ws && ws.readyState === 1) return cb();
-            wsQueue.push(cb);
-            if (ws && ws.readyState === 0) return;
-            const custom = $('netServer').value.trim();
-            const host = location.protocol === 'file:' ? custom : (custom || location.host);
-            if (!host) { wsQueue = []; return netMsg('ფაილიდან გახსნისას სერვერის მისამართი ჩაწერეთ (მაგ. 192.168.1.5:3000)', true); }
-            let sock;
-            try { sock = ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + host); } catch (e) { wsQueue = []; return netMsg('ვერ დავუკავშირდი სერვერს', true); }
-            sock.onopen = () => { const q = wsQueue; wsQueue = []; q.forEach(f => f()); };
-            sock.onclose = () => {
-                if (ws !== sock) return;
-                const was = roomCode;
-                ws = null; wsQueue = []; roomCode = ''; lobby = []; rooms = []; lanStarted = false;
-                netMsg(was ? 'კავშირი გაწყდა' : 'სერვერთან დაკავშირება ვერ მოხერხდა. გაშვებულია `node server.js`?', true);
-                renderTables(); renderLobby(); updateNetUI();
-            };
-            sock.onmessage = e => { try { onNet(JSON.parse(e.data)); } catch (err) { } };
-        }
-        function netWatch() { netMsg(''); netEnsure(() => netSend({ t: 'watch' })); }
-        function netCreate() { isHost = true; netMsg(''); netEnsure(() => netSend({ t: 'create', name: netName() })); }
-        function netJoinRoom(code) { isHost = false; netMsg(''); netEnsure(() => netSend({ t: 'join', code, name: netName() })); }
-        function netLeaveTable() { netReset(); netMsg(''); updateNetUI(); netWatch(); }
-        function netCanStart() {
-            if (!ws || !roomCode) { netMsg('ჯერ შექმენით მაგიდა', true); return false; }
-            if (!isHost) { netMsg('თამაშს მასპინძელი დაიწყებს, დაელოდეთ', true); return false; }
-            if (lobby.length < 2) { netMsg('საჭიროა მინიმუმ 2 მოთამაშე', true); return false; }
-            return true;
-        }
-
-        function onNet(m) {
-            switch (m.t) {
-                case 'created': roomCode = m.code; isHost = true; renderLobby(); updateNetUI(); break;
-                case 'joined': roomCode = m.code; isHost = false; renderLobby(); updateNetUI(); break;
-                case 'lobby': lobby = m.members; renderLobby(); updateNetUI(); break;
-                case 'rooms': rooms = m.rooms || []; renderTables(); break;
-                case 'error': netMsg(m.msg, true); isHost = !!roomCode && isHost; break;
-                case 'closed':
-                    roomCode = ''; lobby = []; lanStarted = false; isHost = false;
-                    if (gameActive && !gameOver) { alert('მასპინძელმა დატოვა თამაში'); exitToMenu(); }
-                    else { renderLobby(); updateNetUI(); netMsg('მასპინძელმა დატოვა მაგიდა', true); netSend({ t: 'watch' }); }
-                    break;
-                case 'fromGuest': onGuestAction(m.id, m.data); break;
-                case 'left': onGuestLeft(m.id); break;
-                case 'fromHost': onHostState(m.data); break;
-            }
-        }
-
-        function syncAll() {
-            if (!ws || !lanStarted) return;
-            const pub = {
-                k: 'state', players: players.map(p => ({ name: p.name, score: p.score, isBot: p.isBot, n: p.rack.length })),
-                cur: currentTurnIndex, board: boardState, first: isFirstMove, bag: tileBag.length,
-                last: [...lastMove], over: gameOver, logs: pendingLogs, tl: turnDeadline ? turnLeft() : null
-            };
-            for (let i = 1; i < players.length; i++) {
-                if (players[i].left) continue;
-                netSend({ t: 'toClient', to: lanIds[i], data: { ...pub, me: i, rack: players[i].rack } });
-            }
-            pendingLogs = [];
-        }
-        const toGuest = (i, data) => netSend({ t: 'toClient', to: lanIds[i], data });
-
-        function onGuestAction(id, d) {
-            const i = lanIds.indexOf(id);
-            if (i < 1 || !gameActive || gameOver || i !== currentTurnIndex || !d) return;
-            const p = players[i];
-            if (d.k === 'submit') {
-                const placed = Array.isArray(d.placed) ? d.placed.slice(0, 7).map(t => ({ r: t.r, c: t.c, letter: t.letter })) : [];
-                const pool = p.rack.map(t => t.letter);
-                for (const t of placed) { const x = pool.indexOf(t.letter); if (x < 0) return toGuest(i, { k: 'err', msg: 'ასოები არ ემთხვევა' }); pool.splice(x, 1); }
-                const v = validatePlacement(placed);
-                if (!v.valid) return toGuest(i, { k: 'err', msg: v.error });
-                placed.forEach(t => p.rack.splice(p.rack.findIndex(r => r.letter === t.letter), 1));
-                commitMove(p, placed, v);
-            } else if (d.k === 'pass') registerPass(`${p.name} გაატარა სვლა`);
-            else if (d.k === 'swap') {
-                if (tileBag.length < 7) return toGuest(i, { k: 'err', msg: 'ტომარაში საკმარისი ასოები არ არის' });
-                doSwap(p); registerPass(`${p.name} შეცვალა ასოები`);
-            }
-        }
-        function onGuestLeft(id) {
-            const i = lanIds.indexOf(id);
-            if (i < 1 || !gameActive) return;
-            if (currentTurnIndex === i) turnDeadline = null;
-            players[i].isBot = true; players[i].left = true; players[i].name += ' (გავიდა, ბოტი)';
-            logMessage(`${players[i].name} დატოვა თამაში — მის ადგილს ბოტი იკავებს`, 'text-amber-200/60');
-            renderAll();
-            if (currentTurnIndex === i) { const g = gameId; setTimeout(() => { if (g === gameId) playBotTurn(); }, 700); }
-        }
-
-        function onHostState(d) {
-            if (d.k === 'err') { playSound('error'); logMessage(`შეცდომა: ${d.msg}`, 'text-red-400'); return; }
-            if (d.k !== 'state') return;
-            if (!lanStarted || (gameOver && !d.over)) {
-                gameMode = 'lan'; lanStarted = true; gameId++;
-                document.getElementById('mainMenu').classList.add('hidden');
-                closeModal('gameOverModal'); initBoardUI();
-                document.getElementById('gameLog').innerHTML = '';
-                gameOver = false; gameActive = true; lastMove = new Set();
-            }
-            myIdx = d.me;
-            players = d.players.map((p, i) => ({ name: p.name, score: p.score, isBot: p.isBot, rack: i === d.me ? d.rack : Array(p.n).fill({ letter: '?', score: 0 }) }));
-            boardState = d.board; currentTurnIndex = d.cur; isFirstMove = d.first;
-            tileBag = Array(d.bag).fill(null); lastMove = new Set(d.last);
-            turnDeadline = (d.tl != null && !d.over) ? Date.now() + d.tl : null; ensureTick();
-            tempPlacedTiles = []; selectedRackTileId = null;
-            d.logs.forEach(l => logMessage(l.msg, l.cls));
-            if (d.over && !gameOver) { gameOver = true; gameActive = false; showFinal(); }
-            renderAll();
-            if (d.logs.length) playSound('score');
-        }
-
-        /* ===== MODALS / HELPERS ===== */
-        function logMessage(msg, cls = 'text-amber-200/80') {
-            if (gameMode === 'lan' && isHost && !cls.includes('red')) pendingLogs.push({ msg, cls });
-            const item = document.createElement('div');
-            item.className = `${cls} text-xs py-0.5 border-b border-amber-500/10`;
-            item.innerHTML = msg;
-            document.getElementById('gameLog').prepend(item);
-        }
-        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
-        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-
-        function checkDictWord() {
-            const input = document.getElementById('dictInput').value.trim();
-            const res = document.getElementById('dictResult');
-            if (!input) { res.innerHTML = '<span class="text-amber-300">გთხოვთ ჩაწეროთ სიტყვა.</span>'; return; }
-            res.innerHTML = isWord(input)
-                ? `<span class="text-emerald-400 font-bold">✓ "${input}" — დაშვებული სიტყვაა</span>`
-                : `<span class="text-rose-400 font-bold">✕ "${input}" — ვერ მოიძებნა ლექსიკონში</span>`;
-        }
-        function downloadWordlist() {
-            const blob = new Blob([FULL.words.join('\n')], { type: 'text/plain;charset=utf-8' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = 'georgian_scrabble_wordlist.txt';
-            document.body.appendChild(a); a.click(); a.remove();
-            URL.revokeObjectURL(a.href);
-        }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            if (window.lucide) lucide.createIcons();
-            selectGameMode('ai');
-            setBotLevel(2); setBotCount(1);
-            const rk = document.getElementById('rack');   // დაფიდან ამოღებული ასოს ხელში დაბრუნება
-            rk.addEventListener('dragover', e => { if (canAct()) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; } });
-            rk.addEventListener('drop', e => {
-                e.preventDefault();
-                const raw = e.dataTransfer.getData('text/plain');
-                if (raw.startsWith('board:')) { const [r, c] = raw.slice(6).split(',').map(Number); returnTempToRack(r, c); }
-            });
-            document.getElementById('dictInput').addEventListener('keydown', e => { if (e.key === 'Enter') checkDictWord(); });
-            loadDictionary();
+        <p class="err" id="err"></p>`;
+      const inputs = [...app.querySelectorAll('#fields input')];
+      inputs.forEach((inp) => {
+        inp.addEventListener('input', () => { drafts[+inp.dataset.i] = inp.value; refreshStop(); });
+        inp.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            const next = inputs[+inp.dataset.i + 1];
+            if (next) next.focus(); else if (!$('#stop').disabled) $('#stop').click();
+          }
         });
+      });
+      inputs[0].focus();
+      $('#stop').onclick = async () => {
+        $('#stop').disabled = true;
+        try { await api('stop', { answers: drafts }); }
+        catch (e) { $('#err').textContent = e.message; refreshStop(); }
+      };
+    }
 
-    </script>
+    refreshStop();
+    updatePlayDynamic();
+    tickTimer = setInterval(updatePlayDynamic, 100);
+  }
+
+  function refreshStop() {
+    const stop = $('#stop'); if (!stop) return;
+    const filled = drafts.length && drafts.every((d) => d.trim().length > 0);
+    stop.disabled = !(state.phase === 'playing' && filled);
+    $('#hint').classList.toggle('hidden', state.phase !== 'playing');
+    // ხაზგასმა გრაფებზე, რომლებიც არასწორ ასოზე იწყება (მხოლოდ მინიშნება, არა ბლოკი)
+    app.querySelectorAll('#fields .cat').forEach((row) => {
+      const v = (drafts[+row.dataset.i] || '').trim().toLowerCase();
+      row.classList.toggle('bad', v.length > 0 && v[0] !== state.letter);
+    });
+  }
+
+  function updatePlayDynamic() {
+    if (!state || !$('#cd')) return;
+    const cd = $('#cd');
+    const inputs = app.querySelectorAll('#fields input');
+    if (state.phase === 'countdown') {
+      const stopper = state.players.find((p) => p.id === state.stopper);
+      const left = Math.max(0, state.endsAt - serverNow());
+      const total = 10000;
+      cd.classList.remove('hidden');
+      cd.innerHTML = `<div>${stopper && stopper.id === session.pid ? 'შენ დააჭირე სტოპს!' : esc(stopper ? stopper.name : 'ვიღაცამ') + ' დააჭირა სტოპს!'} დაასრულე სწრაფად:</div>
+        <div class="time">${Math.ceil(left / 1000)}</div>
+        <div class="bar"><i style="width:${Math.min(100, (left / total) * 100)}%"></i></div>`;
+      if (state.stopper === session.pid) inputs.forEach((i) => (i.readOnly = true));
+    } else {
+      cd.classList.add('hidden');
+    }
+    refreshStop();
+  }
+
+  function renderCollecting() {
+    // ავტომატურად გავგზავნოთ ჩვენი პასუხები (ერთხელ თითო რაუნდზე)
+    if (submittedRound !== state.round) {
+      submittedRound = state.round;
+      api('submit', { answers: drafts }).catch(() => {});
+    }
+    screenKey = 'collecting';
+    app.innerHTML = `
+      <h2>რაუნდი ${state.round} / ${state.totalRounds}</h2>
+      <div class="bigletter" style="font-size:90px">${esc(state.letter)}</div>
+      <p class="sub">ვითვლით ქულებს…</p>`;
+  }
+
+  function renderResults() {
+    const r = state.results; if (!r) return;
+    const fin = state.phase === 'finished';
+    screenKey = 'results:' + state.round + ':' + state.phase;
+    const cats = state.categories;
+    const rows = r.rows;
+    const ranking = [...rows].sort((a, b) => b.score - a.score);
+
+    app.innerHTML = `
+      <div class="roundbar"><h2>რაუნდი ${state.round} / ${state.totalRounds} — ასო „${esc(r.letter)}“</h2></div>
+      <div class="tablewrap"><table>
+        <thead><tr><th>მოთამაშე</th>${cats.map((c) => `<th>${esc(c)}</th>`).join('')}<th class="total">რაუნდი</th><th class="total">სულ</th></tr></thead>
+        <tbody>${rows.map((row) => `<tr>
+          <th>${esc(row.name)}${row.id === session.pid ? '<span class="tag">შენ</span>' : ''}</th>
+          ${row.cells.map((c) => `<td class="${c.status}"><span class="txt">${esc(c.text) || '—'}</span><span class="pts">+${c.pts}</span></td>`).join('')}
+          <td class="total">+${row.total}</td><td class="total">${row.score}</td></tr>`).join('')}
+        </tbody></table></div>
+      <div class="legend">
+        <span><b>+10</b> უნიკალური</span><span><b class="s">+5</b> განმეორებული</span><span><b>+0</b> ცარიელი ან არასწორი ასო</span>
+      </div>
+      ${fin ? `
+        <div class="sheet" style="margin-top:22px">
+          <h2>საბოლოო შედეგი</h2>
+          <ol class="rank">${ranking.map((p) => `<li><span>${esc(p.name)}</span><span>${p.score}</span></li>`).join('')}</ol>
+          ${isHost() ? `<div class="row"><div><label class="f" for="rounds">რაუნდების რაოდენობა</label><input type="number" id="rounds" min="1" max="15" value="${state.totalRounds}"></div><button id="again">ახალი თამაში</button></div>`
+            : '<p class="hint">ველოდებით მასპინძელს ახალი თამაშისთვის…</p>'}
+        </div>` : `
+        <div class="stopwrap">
+          ${isHost() ? '<button id="next">შემდეგი რაუნდი</button>' : '<span class="hint">ველოდებით მასპინძელს შემდეგი რაუნდისთვის…</span>'}
+        </div>`}
+      <p class="err" id="err"></p>
+      <p><button class="ghost" id="leave">გასვლა</button></p>`;
+
+    $('#leave').onclick = () => leave();
+    const next = $('#next');
+    if (next) next.onclick = async () => { try { await api('next', {}); } catch (e) { $('#err').textContent = e.message; } };
+    const again = $('#again');
+    if (again) again.onclick = async () => { try { await api('start', { rounds: $('#rounds').value }); } catch (e) { $('#err').textContent = e.message; } };
+  }
+
+  // ---------- გაშვება ----------
+  if (session) { screenKey = 'connecting'; app.innerHTML = '<p class="sub">ვუკავშირდებით…</p>'; connect(); }
+  else renderHome();
+})();
+</script>
 </body>
 </html>
