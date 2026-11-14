@@ -1,2545 +1,1393 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Backgammon</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800;900&family=Noto+Serif:wght@500;700;900&family=Noto+Sans:wght@400;600;700&display=swap"
-      rel="stylesheet"
-    />
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>სიტყვობანა - ქართული სკრაბლი (Georgian Scrabble)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Noto+Sans+Georgian:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <style>
-      :root {
-        --ink: #0b0705;
-        --walnut-dark: #1b100a;
-        --walnut-mid: #382114;
-        --walnut-light: #5a3821;
-        --gold-grad: linear-gradient(
-          135deg,
-          #fce0a2 0%,
-          #d4af37 50%,
-          #8a6a1c 100%
-        );
-        --gold-glow: rgba(212, 175, 55, 0.35);
-        --gold-border: rgba(212, 175, 55, 0.4);
-        --felt: #6a4426;
-        --ar: 1.3;
-        --l: #f0dcb4;
-        --d: #2f170b;
-        --g: #f1c453;
-        --t: #f7eedd;
-        --mut: #c3b8a5;
-        --glass-bg: rgba(26, 17, 12, 0.72);
-        --glass-border: rgba(242, 195, 91, 0.22);
-        --serif: "Noto Serif", Georgia, serif;
-        --sans: "Noto Sans", system-ui, sans-serif;
-        --brand-font: "Cinzel", "Noto Serif", serif;
-        color-scheme: dark;
-      }
-
-      * {
-        box-sizing: border-box;
-      }
-      [hidden] {
-        display: none !important;
-      }
-
-      body {
-        margin: 0;
-        min-height: 100vh;
-        min-height: 100dvh;
-        color: var(--t);
-        font: 16px/1.4 var(--sans);
-        background:
-          radial-gradient(
-            circle at 50% 20%,
-            rgba(85, 48, 25, 0.35) 0%,
-            transparent 60%
-          ),
-          radial-gradient(
-            circle at 50% 80%,
-            rgba(90, 56, 33, 0.25) 0%,
-            transparent 70%
-          ),
-          repeating-linear-gradient(
-            45deg,
-            rgba(255, 255, 255, 0.01) 0px,
-            rgba(255, 255, 255, 0.01) 2px,
-            transparent 2px,
-            transparent 8px
-          ),
-          linear-gradient(180deg, #120b07 0%, #060403 100%);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 12px;
-        overflow-x: hidden;
-      }
-
-      h1,
-      h2,
-      h3 {
-        margin: 0;
-        font-family: var(--serif);
-      }
-
-      button,
-      input {
-        font: inherit;
-        color: inherit;
-      }
-
-      /* Premium Buttons */
-      button {
-        background:
-          linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.08) 0%,
-            rgba(255, 255, 255, 0.02) 100%
-          ),
-          rgba(20, 13, 9, 0.6);
-        border: 1px solid var(--glass-border);
-        border-radius: 12px;
-        padding: 12px 20px;
-        cursor: pointer;
-        transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
-        backdrop-filter: blur(8px);
-        box-shadow:
-          0 4px 12px rgba(0, 0, 0, 0.3),
-          inset 0 1px 0 rgba(255, 255, 255, 0.1);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-      }
-
-      button:hover {
-        border-color: var(--g);
-        background:
-          linear-gradient(
-            180deg,
-            rgba(242, 195, 91, 0.2) 0%,
-            rgba(242, 195, 91, 0.05) 100%
-          ),
-          rgba(30, 20, 14, 0.8);
-        box-shadow:
-          0 6px 20px rgba(242, 195, 91, 0.25),
-          inset 0 1px 0 rgba(255, 255, 255, 0.2);
-        transform: translateY(-2px);
-      }
-
-      button:active {
-        transform: translateY(1px);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-      }
-
-      button:disabled {
-        opacity: 0.6;
-        cursor: default;
-        transform: none;
-      }
-
-      button.pr {
-        background: var(--gold-grad);
-        color: #1a0f05;
-        border-color: #fce0a2;
-        font-weight: 700;
-        text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
-        box-shadow:
-          0 4px 18px var(--gold-glow),
-          inset 0 1px 0 rgba(255, 255, 255, 0.6);
-      }
-
-      button.pr:hover {
-        background: linear-gradient(
-          135deg,
-          #ffffff 0%,
-          #e6c15c 50%,
-          #a37d26 100%
-        );
-        box-shadow:
-          0 6px 24px rgba(212, 175, 55, 0.5),
-          inset 0 1px 0 #fff;
-        transform: translateY(-2px);
-      }
-
-      input {
-        background: rgba(0, 0, 0, 0.5);
-        border: 1px solid var(--glass-border);
-        border-radius: 12px;
-        padding: 12px 16px;
-        min-width: 0;
-        color: #fff;
-        outline: none;
-        transition: border-color 0.2s;
-      }
-      input:focus {
-        border-color: var(--g);
-        box-shadow: 0 0 12px var(--gold-glow);
-      }
-
-      /* Panel Cards */
-      .pn {
-        display: flex;
-        flex-direction: column;
-        gap: 18px;
-        width: min(92vw, 440px);
-        margin: auto;
-        animation: fadeIn 0.4s ease-out;
-      }
-
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(10px);
+        :root {
+            --font-georgian: 'Noto Sans Georgian', sans-serif;
+            --font-title: 'Cinzel', 'Noto Sans Georgian', serif;
         }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
 
-      .card {
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-        padding: 22px;
-        border: 1px solid var(--glass-border);
-        border-radius: 20px;
-        background: var(--glass-bg);
-        backdrop-filter: blur(16px);
-        box-shadow:
-          0 16px 40px rgba(0, 0, 0, 0.6),
-          inset 0 1px 1px rgba(255, 255, 255, 0.1);
-      }
-
-      .card h3 {
-        color: var(--g);
-        font-size: 1.15rem;
-        letter-spacing: 0.05em;
-        border-bottom: 1px solid var(--glass-border);
-        padding-bottom: 8px;
-      }
-
-      .logo {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 4px;
-        margin-bottom: 10px;
-      }
-
-      .logo h1 {
-        font-family: var(--serif);
-        font-size: clamp(1.9rem, 9vw, 2.6rem);
-        font-weight: 900;
-        letter-spacing: 0.03em;
-        text-align: center;
-        white-space: nowrap;
-        background: linear-gradient(
-          180deg,
-          #fff6db 0%,
-          #e0b85c 50%,
-          #9e7525 100%
-        );
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.8));
-      }
-
-      .sub {
-        margin: 0;
-        color: var(--mut);
-        font-size: 0.95rem;
-        letter-spacing: 0.25em;
-        text-transform: uppercase;
-      }
-
-      .pts {
-        width: 100%;
-        height: 6px;
-        margin-top: 12px;
-        border-radius: 6px;
-        background: var(--gold-grad);
-        box-shadow: 0 0 12px var(--gold-glow);
-      }
-
-      .menu {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-      }
-
-      .menu button {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 4px;
-        text-align: left;
-        padding: 16px 20px;
-        border-left: 4px solid var(--g);
-        border-radius: 14px;
-      }
-
-      .menu button b {
-        font-family: var(--serif);
-        font-size: 1.1rem;
-        color: #fff;
-      }
-
-      .menu button small {
-        font-size: 0.85rem;
-        color: var(--mut);
-      }
-
-      .gh {
-        background: transparent;
-        border-color: transparent;
-        color: var(--mut);
-        box-shadow: none;
-      }
-      .gh:hover {
-        background: rgba(255, 255, 255, 0.05);
-        color: #fff;
-        box-shadow: none;
-      }
-
-      .hint {
-        margin: 0;
-        font-size: 0.85rem;
-        line-height: 1.5;
-        color: var(--mut);
-      }
-
-      .tg {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 12px;
-      }
-
-      .row {
-        display: flex;
-        gap: 10px;
-      }
-      .row > * {
-        flex: 1;
-      }
-
-      .tb {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 10px;
-        padding: 12px 16px;
-        border: 1px solid var(--glass-border);
-        border-left: 4px solid var(--g);
-        border-radius: 12px;
-        background: rgba(0, 0, 0, 0.3);
-      }
-
-      /* Game Layout Container */
-      #g {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        justify-content: center;
-        gap: 20px;
-        width: 100%;
-        max-width: 1400px;
-        margin: auto;
-      }
-
-      #board-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 16px;
-      }
-
-      /* =========================================
-         LUXURY BOARD FRAME DESIGN (EDGES)
-         ========================================= */
-      #brow {
-        display: flex;
-        align-items: stretch;
-        gap: 10px;
-      }
-
-      #bw {
-        position: relative;
-        container-type: inline-size;
-        --bw: max(22px, 2.2vw);
-        width: min(calc(100vw - 330px), calc((100vh - 140px) * var(--ar)));
-        width: min(calc(100vw - 330px), calc((100dvh - 140px) * var(--ar)));
-        aspect-ratio: var(--ar);
-        padding: var(--bw);
-        border-radius: 20px;
-
-        /* Deep Outer Wood Frame Structure */
-        background:
-          radial-gradient(
-            circle at 50% 50%,
-            transparent 60%,
-            rgba(0, 0, 0, 0.8) 100%
-          ),
-          linear-gradient(135deg, #422513 0%, #28150a 40%, #150a04 100%);
-        box-shadow:
-          0 25px 60px rgba(0, 0, 0, 0.9),
-          0 10px 20px rgba(0, 0, 0, 0.7),
-          inset 0 2px 3px rgba(255, 255, 255, 0.25),
-          inset 0 -3px 6px rgba(0, 0, 0, 0.8);
-        border: 1px solid rgba(242, 195, 91, 0.3);
-      }
-
-      /* Inner Gold Inlay Trim around the wood edge */
-      #bw::after {
-        content: "";
-        position: absolute;
-        inset: calc(var(--bw) - 4px);
-        border: 2px solid rgba(212, 175, 55, 0.5);
-        border-radius: 8px;
-        pointer-events: none;
-        box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8);
-        z-index: 2;
-      }
-
-      /* Playing Felt Field */
-      #bd {
-        width: 100%;
-        height: 100%;
-        display: grid;
-        grid-template-columns: repeat(6, 1fr) 1.1fr repeat(6, 1fr) 1.1fr;
-        grid-template-rows: 1fr 1fr;
-        border-radius: 6px;
-        box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.85);
-        background:
-          radial-gradient(
-            ellipse at center,
-            rgba(138, 92, 55, 0.85) 0%,
-            rgba(74, 45, 24, 0.95) 100%
-          ),
-          repeating-linear-gradient(
-            90deg,
-            transparent 0 2px,
-            rgba(0, 0, 0, 0.05) 2px 8px
-          ),
-          var(--felt);
-        touch-action: none;
-        user-select: none;
-        position: relative;
-        overflow: hidden;
-      }
-
-      /* Points (Triangles) */
-      .p {
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        cursor: pointer;
-      }
-
-      .u {
-        grid-row: 1;
-      }
-      .d {
-        grid-row: 2;
-        flex-direction: column-reverse;
-      }
-
-      .p::before {
-        content: "";
-        position: absolute;
-        inset: 0 5%;
-        background: var(--l);
-        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
-        transition: filter 0.2s;
-      }
-
-      .u::before {
-        clip-path: polygon(0 0, 100% 0, 50% 92%);
-      }
-      .d::before {
-        clip-path: polygon(0 100%, 100% 100%, 50% 8%);
-      }
-
-      .o::before {
-        background: var(--d);
-      }
-
-      /* Highlight effect on target points */
-      .t::after {
-        content: "";
-        position: absolute;
-        left: 15%;
-        right: 15%;
-        height: 8px;
-        border-radius: 8px;
-        background: #ffe38f;
-        box-shadow: 0 0 16px 5px #f2c35b;
-        z-index: 3;
-        animation: pl 1.2s ease-in-out infinite;
-      }
-
-      .u.t::after {
-        top: 2px;
-      }
-      .d.t::after {
-        bottom: 2px;
-      }
-
-      .tr.t::after {
-        left: auto;
-        right: 2px;
-        top: 15%;
-        bottom: 15%;
-        width: 8px;
-        height: auto;
-      }
-
-      @keyframes pl {
-        0%,
-        100% {
-          opacity: 0.4;
-          transform: scale(0.95);
-        }
-        50% {
-          opacity: 1;
-          transform: scale(1.05);
-        }
-      }
-
-      /* Bar & Off Zone Center Bars */
-      .bz,
-      .tr {
-        background: linear-gradient(180deg, #231309 0%, #150a04 100%);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        cursor: pointer;
-        box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8);
-        border-left: 1px solid rgba(255, 255, 255, 0.05);
-        border-right: 1px solid rgba(0, 0, 0, 0.5);
-      }
-
-      .bu {
-        justify-content: flex-end;
-      }
-
-      .tr {
-        position: relative;
-        background: linear-gradient(180deg, #1b0d05 0%, #0d0602 100%);
-        justify-content: center;
-        border-left: 2px solid rgba(212, 175, 55, 0.3);
-      }
-
-      /* Checkers (K) */
-      .k {
-        position: relative;
-        z-index: 1;
-        width: 84%;
-        aspect-ratio: 1;
-        border-radius: 50%;
-        flex: none;
-        margin: 1px 0;
-        font: 700 0.95rem var(--sans);
-        display: grid;
-        place-items: center;
-        background-size: cover;
-        background-position: center;
-        box-shadow:
-          0 6px 12px rgba(0, 0, 0, 0.7),
-          inset 0 1px 1px rgba(255, 255, 255, 0.4);
-        transition: transform 0.15s ease;
-      }
-
-      .k span {
-        position: relative;
-        z-index: 2;
-        text-shadow:
-          0 1px 4px #000,
-          0 0 2px #000;
-        font-weight: 800;
-      }
-
-      .w {
-        background-image: url("white.png");
-        color: #fff;
-      }
-
-      .b {
-        background-image: url("black.png");
-        color: #fff;
-      }
-
-      /* Selected / Move Glows */
-      .m .k:last-child {
-        box-shadow:
-          0 0 0 3px var(--g),
-          0 0 15px var(--g);
-      }
-
-      .s .k:last-child {
-        box-shadow:
-          0 0 0 3px #fff,
-          0 0 0 6px #ff9d00,
-          0 0 20px #ffc24a;
-        transform: scale(1.08);
-        z-index: 4;
-      }
-
-      .t.c2::after {
-        background: #fff;
-        box-shadow: 0 0 16px 6px #fff;
-      }
-
-      /* Status & Timer Footer */
-      #st {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        align-items: center;
-        justify-content: center;
-        width: min(96vw, 900px);
-      }
-
-      #ms {
-        font-family: var(--serif);
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: var(--g);
-        text-align: center;
-        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
-      }
-
-      #tm {
-        display: flex;
-        gap: 16px;
-      }
-
-      .tc {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 8px 18px;
-        border: 1px solid var(--glass-border);
-        border-radius: 999px;
-        background: var(--glass-bg);
-        backdrop-filter: blur(10px);
-        font-size: 0.95rem;
-        opacity: 0.65;
-        transition: all 0.3s ease;
-      }
-
-      .tc i {
-        font-style: normal;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-weight: 600;
-      }
-
-      .tc i { max-width: 9em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .tc i::before {
-        content: "";
-        width: 16px;
-        height: 16px;
-        border-radius: 50%;
-        box-shadow:
-          inset 0 1px 2px rgba(255, 255, 255, 0.6),
-          0 2px 4px rgba(0, 0, 0, 0.6);
-      }
-
-      #t0 i::before {
-        background: radial-gradient(circle at 35% 30%, #ffffff, #c7b299);
-      }
-
-      #t1 i::before {
-        background: radial-gradient(circle at 35% 30%, #5a4a40, #0f0a08);
-      }
-
-      .tc b {
-        color: var(--g);
-        min-width: 1.2em;
-        text-align: right;
-      }
-
-      .tc em {
-        font-style: normal;
-        font-weight: 700;
-        font-variant-numeric: tabular-nums;
-      }
-
-      .tc.on {
-        opacity: 1;
-        border-color: var(--g);
-        box-shadow: 0 0 20px rgba(242, 195, 91, 0.3);
-        background: rgba(35, 22, 14, 0.85);
-      }
-
-      .tc.lo em {
-        color: #ff5252;
-      }
-
-      /* Overlay Action Buttons & Dice Controls */
-      #dz {
-        position: absolute;
-        left: calc(var(--bw) + (100% - 2 * var(--bw)) * 0.714);
-        top: 50%;
-        transform: translate(-50%, -50%);
-        pointer-events: none;
-        z-index: 10;
-      }
-
-      #uz {
-        position: absolute;
-        left: calc(var(--bw) + (100% - 2 * var(--bw)) * 0.214);
-        top: 50%;
-        transform: translate(-50%, -50%);
-        pointer-events: none;
-        z-index: 10;
-      }
-
-      #dc {
-        position: relative;
-        display: flex;
-        gap: 1.2cqw;
-      }
-
-      #rl {
-        position: absolute;
-        inset: -10px -14px;
-        pointer-events: auto;
-        background: var(--gold-grad);
-        border: 1px solid #ffe8b5;
-        color: #1a0d05;
-        font: 800 max(1.6cqw, 14px) var(--serif);
-        border-radius: 14px;
-        box-shadow:
-          0 8px 25px rgba(0, 0, 0, 0.6),
-          0 0 20px var(--gold-glow);
-      }
-
-      #rs {
-        pointer-events: auto;
-        white-space: nowrap;
-        padding: 0.6em 1.4em;
-        font: 800 max(1.6cqw, 14px) var(--serif);
-        border-radius: 14px;
-        box-shadow:
-          0 8px 25px rgba(0, 0, 0, 0.6),
-          0 0 20px var(--gold-glow);
-      }
-
-      #un,
-      #cf {
-        pointer-events: auto;
-        white-space: nowrap;
-        font-size: max(1.4cqw, 13px);
-        padding: 0.5em 1.2em;
-        border-radius: 12px;
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
-      }
-
-      /* Dice Styling */
-      .dc {
-        width: max(5.6cqw, 34px);
-        height: max(5.6cqw, 34px);
-        border-radius: 10px;
-        background: linear-gradient(135deg, #ffffff 0%, #e6dac3 100%);
-        display: grid;
-        grid-template: repeat(3, 1fr) / repeat(3, 1fr);
-        padding: max(0.9cqw, 5px);
-        box-shadow:
-          0 6px 14px rgba(0, 0, 0, 0.6),
-          inset 0 -2px 0 rgba(0, 0, 0, 0.15);
-        font-style: normal;
-      }
-
-      .dc b {
-        border-radius: 50%;
-        margin: 1px;
-      }
-
-      .dc b.o {
-        background: radial-gradient(circle at 35% 30%, #3a3a3a, #050505);
-      }
-
-      .dc.x {
-        opacity: 0.35;
-      }
-
-      .dc.sp {
-        animation: tm 0.3s linear infinite;
-      }
-
-      @keyframes tm {
-        25% {
-          transform: translateY(-10px) rotate(90deg);
-        }
-        50% {
-          transform: rotate(180deg);
-        }
-        75% {
-          transform: translateY(-10px) rotate(270deg);
-        }
-        to {
-          transform: rotate(360deg);
-        }
-      }
-
-      /* Pip count */
-      #pips {
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        padding: 4px 0;
-      }
-
-      .pip {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 6px;
-        min-width: 52px;
-        padding: 8px 6px;
-        border: 1px solid var(--glass-border);
-        border-radius: 12px;
-        background: var(--glass-bg);
-        backdrop-filter: blur(10px);
-        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
-      }
-
-      .pip i {
-        width: 18px;
-        height: 18px;
-        border-radius: 50%;
-        box-shadow:
-          inset 0 1px 2px rgba(255, 255, 255, 0.6),
-          0 2px 4px rgba(0, 0, 0, 0.6);
-      }
-
-      .pip.w i {
-        background: radial-gradient(circle at 35% 30%, #ffffff, #c7b299);
-      }
-
-      .pip.b i {
-        background: radial-gradient(circle at 35% 30%, #5a4a40, #0f0a08);
-      }
-
-      .pip b {
-        font: 800 1.15rem var(--serif);
-        color: var(--g);
-        font-variant-numeric: tabular-nums;
-      }
-
-      #pips {
-        min-width: 64px;
-      }
-
-      #ptw {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-      }
-
-      #gv {
-        width: 100%;
-        flex-direction: column;
-        gap: 2px;
-        padding: 6px 4px;
-        border-radius: 12px;
-        font-size: 0.72rem;
-        font-weight: 600;
-        line-height: 1.2;
-        background: var(--glass-bg);
-      }
-
-      #gv .ic {
-        font-size: 1.1rem;
-      }
-
-      .ctrl-btn.off {
-        opacity: 0.55;
-      }
-
-      .ctrl-btn.off span:last-child {
-        text-decoration: line-through;
-      }
-
-      /* Rematch dialog */
-      .modal {
-        position: fixed;
-        inset: 0;
-        z-index: 200;
-        display: grid;
-        place-items: center;
-        background: rgba(0, 0, 0, 0.6);
-        backdrop-filter: blur(4px);
-      }
-
-      .modal .card {
-        width: min(88vw, 360px);
-        text-align: center;
-      }
-
-      .modal p {
-        margin: 0;
-        color: var(--mut);
-      }
-
-      /* Sidebar Control Panel */
-      #ctrl-panel {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        align-items: stretch;
-      }
-
-      .ctrl-btn {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 12px 18px;
-        border-radius: 14px;
-        font-size: 0.95rem;
-        font-weight: 600;
-        background: var(--glass-bg);
-        white-space: nowrap;
-      }
-
-      .ctrl-btn span.ic {
-        font-size: 1.2rem;
-      }
-
-      .mctl {
-        display: flex;
-        gap: 8px;
-        justify-content: center;
-        flex-wrap: wrap;
-      }
-      .mctl .ctrl-btn {
-        padding: 10px 14px;
-        font-size: 0.9rem;
-      }
-      .mctl .ctrl-btn span:not(.ic) {
-        display: inline !important;
-      }
-
-      /* Responsive Media Queries */
-      #uz {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 8px;
-      }
-      #dc2 {
-        display: flex;
-      }
-      #bw.l #dz {
-        left: calc(var(--bw) + (100% - 2 * var(--bw)) * 0.214);
-      }
-      #bw.l #uz {
-        left: calc(var(--bw) + (100% - 2 * var(--bw)) * 0.714);
-      }
-      .dc.bk {
-        background: linear-gradient(135deg, #3d3d3d, #0b0b0b);
-        box-shadow:
-          0 6px 14px rgba(0, 0, 0, 0.6),
-          inset 0 0 0 1px #ffffff26;
-      }
-      .dc.bk b.o {
-        background: radial-gradient(circle at 35% 30%, #fff, #cfcfcf);
-      }
-      .dc.x {
-        opacity: 0.4;
-      }
-      #rs,
-      #cf {
-        background: var(--gold-grad);
-        border: 1px solid #ffe8b5;
-        color: #1a0d05;
-        font: 800 max(1.6cqw, 14px) var(--serif);
-        padding: 0.9em 2.2em;
-        min-width: 11em;
-        border-radius: 14px;
-        box-shadow:
-          0 8px 25px rgba(0, 0, 0, 0.6),
-          0 0 20px var(--gold-glow);
-      }
-      #un {
-        font: 700 max(1.5cqw, 13px) var(--serif);
-        padding: 0.8em 1.8em;
-        border-radius: 14px;
-        border: 1px solid rgba(255, 255, 255, 0.22);
-        background: rgba(10, 10, 10, 0.92);
-        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.6);
-      }
-      #rs:hover,
-      #cf:hover {
-        filter: brightness(1.1);
-      }
-      @media (prefers-reduced-motion: reduce) {
-        .t::after,
-        .dc.sp {
-          animation: none;
-        }
-        button {
-          transition: none;
-        }
-      }
-
-      @media (max-height: 550px) {
         body {
-          padding: 4px;
+            font-family: var(--font-georgian);
+            background: #0f0805;
+            background-image: 
+                radial-gradient(circle at 50% 20%, rgba(212, 175, 55, 0.08) 0%, transparent 60%),
+                radial-gradient(circle at 10% 80%, rgba(139, 69, 19, 0.12) 0%, transparent 50%),
+                radial-gradient(circle at 90% 80%, rgba(139, 69, 19, 0.12) 0%, transparent 50%);
+            color: #f3e5ab;
+            min-height: 100vh;
+            user-select: none;
         }
-        #g {
-          gap: 10px;
-        }
-        #bw {
-          --bw: 12px;
-          width: min(calc(100vw - 240px), calc((100vh - 10px) * var(--ar)));
-          width: min(calc(100vw - 240px), calc((100dvh - 10px) * var(--ar)));
-        }
-      }
 
-      @media (max-width: 768px) {
-        #g {
-          flex-direction: column;
+        /* Dark Glassmorphism Panels */
+        .glass-panel {
+            background: rgba(22, 13, 8, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            box-shadow: 
+                0 20px 50px rgba(0, 0, 0, 0.8),
+                inset 0 1px 1px rgba(255, 223, 138, 0.15);
         }
-        #ctrl-panel {
-          flex-direction: row;
-          width: 100%;
-          justify-content: center;
+
+        .gold-text-gradient {
+            background: linear-gradient(135deg, #fff7ed 0%, #fef08a 30%, #d4af37 70%, #9a6b1f 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
-        #bw {
-          --bw: 12px;
-          width: calc(96vw - 60px);
+
+        /* Dark Wood Board Frame */
+        .wood-frame {
+            background: radial-gradient(circle, #221208 0%, #0d0603 100%);
+            box-shadow: 
+                0 25px 60px rgba(0,0,0,0.95),
+                inset 0 0 20px rgba(0,0,0,0.9),
+                0 0 0 2px rgba(212, 175, 55, 0.3);
+            border: 12px solid #1a0e06;
+            border-radius: 20px;
         }
-        .pip {
-          min-width: 46px;
-          padding: 6px 4px;
+
+        .scrabble-board {
+            display: grid;
+            grid-template-columns: repeat(15, minmax(0, 1fr));
+            grid-template-rows: repeat(15, minmax(0, 1fr));
+            gap: 3px;
+            background: #0d0603;
+            padding: 6px;
+            border-radius: 8px;
+            box-shadow: inset 0 0 25px rgba(0,0,0,0.95);
         }
-      }
-      #gov {
-        z-index: 150;
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-      }
-      #gov .card {
-        gap: 12px;
-      }
-      #govt {
-        font-size: 1.8rem;
-        border: 0;
-        padding: 0;
-      }
-      @media (max-width: 768px) {
-        body {
-          padding: 6px;
+
+        /* Cell Styling - Dark Theme */
+        .cell {
+            aspect-ratio: 1 / 1;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(0.6rem, 1.3vw, 0.95rem);
+            font-weight: 700;
+            position: relative;
+            transition: all 0.15s ease;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.6);
+            cursor: pointer;
         }
-        .ctrl-btn {
-          padding: 10px 12px;
+
+        .cell-normal { background: #1a100a; color: #523e32; }
+        .cell-dl { background: #0f2b3e; color: #7dd3fc; border: 1px solid rgba(125, 211, 252, 0.25); } 
+        .cell-tl { background: #122b68; color: #60a5fa; border: 1px solid rgba(96, 165, 250, 0.35); font-weight: 800; } 
+        .cell-dw { background: #4a101d; color: #fca5a5; border: 1px solid rgba(252, 165, 165, 0.25); } 
+        .cell-tw { background: #5c0a1a; color: #f87171; border: 1px solid rgba(248, 113, 113, 0.4); font-weight: 800; } 
+        .cell-center { background: #4a2107; color: #fef08a; border: 1px solid #d4af37; }
+
+        .cell.drag-over {
+            filter: brightness(1.5);
+            outline: 2px dashed #fef08a;
+            outline-offset: -2px;
         }
-        .ctrl-btn span:not(.ic) {
-          display: none;
+
+        /* Scrabble Tile Styling */
+        .tile {
+            background: linear-gradient(145deg, #2a1c12 0%, #1f140c 60%, #150d07 100%);
+            color: #f3e5ab;
+            border-radius: 6px;
+            box-shadow: 
+                0 4px 8px rgba(0, 0, 0, 0.6),
+                inset 0 1px 0 rgba(255, 235, 175, 0.2),
+                inset 0 -2px 0 rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            font-weight: 800;
+            cursor: grab;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            border: 1px solid rgba(212, 175, 55, 0.35);
+            user-select: none;
         }
-        .tc {
-          padding: 6px 12px;
-          font-size: 0.85rem;
+
+        .tile:active {
+            cursor: grabbing;
+            transform: scale(1.05);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.7);
         }
-        #ms {
-          font-size: 1rem;
+
+        .tile.selected {
+            border-color: #fef08a;
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(212, 175, 55, 0.5);
         }
-        #board-container {
-          gap: 8px;
+
+        .tile-temp {
+            opacity: 0.9;
+            outline: 2px solid #3b82f6;
+            outline-offset: -1px;
         }
-        .card {
-          padding: 16px;
+
+        .tile-score {
+            position: absolute;
+            bottom: 1px;
+            right: 3px;
+            font-size: clamp(0.5rem, 0.9vw, 0.75rem);
+            font-weight: 700;
+            color: #d4af37;
+            line-height: 1;
         }
-      }
-      @media (max-height: 550px) {
-        .ctrl-btn {
-          padding: 10px;
+
+        /* Rack Container */
+        .rack-container {
+            background: linear-gradient(180deg, #221208 0%, #0d0603 100%);
+            border: 2px solid #4a2810;
+            box-shadow: 
+                0 10px 25px rgba(0,0,0,0.8),
+                inset 0 2px 4px rgba(255,255,255,0.08);
+            border-radius: 14px;
+            padding: 8px 16px;
         }
-        .ctrl-btn span:not(.ic) {
-          display: none;
+
+        .tile-last { outline: 2px solid #fef08a; outline-offset: -2px; }
+
+        /* Fit everything on one screen — no scroll for board+rack */
+        .board-wrap {
+            width: min(100%, calc(100vh - 168px), 720px);
+            max-width: 100%;
         }
-        #board-container,
-        #st {
-          gap: 4px;
+        @media (max-width: 1023px) {
+            .board-wrap { width: min(100%, calc(100vh - 200px)); }
         }
-        #tm {
-          gap: 8px;
+        @media (min-width: 1024px) {
+            .board-wrap { width: min(100%, calc(100vh - 150px), 680px); }
         }
-        #ms {
-          font-size: 0.95rem;
+
+        .wood-frame {
+            border-width: 6px !important;
+            border-radius: 12px !important;
+            padding: 4px !important;
         }
-        .modal .card {
-          padding: 14px;
-          gap: 8px;
+        .scrabble-board { gap: 2px !important; padding: 3px !important; }
+
+        .rack-container {
+            padding: 4px 10px !important;
+            border-radius: 10px !important;
+            min-height: 52px !important;
         }
-        #govt {
-          font-size: 1.3rem;
+
+        /* Compact left panel */
+        .side-panel { width: 220px; max-width: 220px; }
+        @media (min-width: 1280px) { .side-panel { width: 240px; max-width: 240px; } }
+
+        body.game-active {
+            height: 100vh;
+            overflow: hidden;
+            padding: 6px !important;
         }
-      }
+        body.game-active footer { display: none; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: rgba(10, 5, 2, 0.8); }
+        ::-webkit-scrollbar-thumb { background: #4a2810; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #d4af37; }
     </style>
-      <script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>
-  </head>
-  <body>
-    <!-- Main Menu Panel -->
-    <div id="m" class="pn">
-      <header class="logo">
-        <h1>Backgammon</h1>
-        <div class="pts"></div>
-      </header>
-      <nav class="menu">
-        <button onclick="show('df')">
-          <b>Against Computer</b>
-          <small>Choose difficulty and play solo</small>
-        </button>
-        <button onclick="start(['h', 'h'], ['White turn', 'Black turn'], 0)">
-          <b>Two Players</b>
-          <small>On the same device, taking turns</small>
-        </button>
-        <button onclick="lobby()">
-          <b>Play Online</b>
-          <small>Play against another person over the internet</small>
-        </button>
-      </nav>
-      <button class="gh" onclick="show('op')">⚙ Options</button>
-      <div class="mctl">
-        <button class="ctrl-btn snb" onclick="mute()" title="Game Sounds">
-          <span class="ic">🔊</span><span>Sound</span>
-        </button>
-        <button class="ctrl-btn mub" onclick="mmute()" title="Music">
-          <span class="ic">🎵</span><span>Music</span>
-        </button>
-        <button class="ctrl-btn fsb" onclick="fs()" title="Fullscreen">
-          <span class="ic">⛶</span><span class="fsbt">Fullscreen</span>
-        </button>
-      </div>
-    </div>
+</head>
+<body class="flex flex-col min-h-screen justify-between p-1.5 md:p-2 overflow-x-hidden">
 
-    <!-- AI Difficulty Panel -->
-    <div id="df" class="pn" hidden>
-      <h1>Computer</h1>
-      <div class="card">
-        <h3>Difficulty</h3>
-        <button onclick="ai(0)">Easy</button>
-        <button onclick="ai(1)">Medium</button>
-        <button onclick="ai(2)">Hard</button>
-      </div>
-      <button class="gh" onclick="menu()">← Back</button>
-    </div>
-
-    <!-- Multiplayer Lobby Panel -->
-    <div id="lb" class="pn" hidden>
-      <h1>Lobby</h1>
-      <div class="card">
-        <h3>New Table</h3>
-        <div class="row">
-          <input id="nm" placeholder="Table name" maxlength="20" />
-          <input id="pw" placeholder="Password (optional)" maxlength="12" />
-        </div>
-        <button class="pr" onclick="mk()">Create</button>
-        <p id="lr" class="hint"></p>
-        <p id="lm"></p>
-        <button id="inv" class="pr" onclick="copyInvite()" hidden>Copy invite link</button>
-      </div>
-      <div class="card">
-        <h3>Open Tables</h3>
-        <div
-          id="tl"
-          style="display: flex; flex-direction: column; gap: 8px"
-        ></div>
-      </div>
-      <button class="gh" onclick="menu()">← Back</button>
-    </div>
-
-    <!-- Options Panel -->
-    <div id="op" class="pn" hidden>
-      <h1>Options</h1>
-      <div class="card">
-        <h3>Checker Click Mode</h3>
-        <div class="row">
-          <button id="cm0" onclick="cmode(0)">Click to Play</button>
-          <button id="cm1" onclick="cmode(1)">Select and Move</button>
-        </div>
-        <p id="cmh" class="hint"></p>
-      </div>
-      <button class="gh" onclick="menu()">← Back</button>
-    </div>
-
-    <!-- Rematch offer dialog (LAN) -->
-    <div id="rqd" class="modal" hidden>
-      <div class="card">
-        <h3>Rematch Offer</h3>
-        <p>Your opponent wants to restart the game</p>
-        <div class="row">
-          <button class="pr" onclick="reply(1)">Yes</button>
-          <button onclick="reply(0)">No</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Confirm dialog (leave / surrender) -->
-    <div id="cfd" class="modal" hidden>
-      <div class="card">
-        <h3 id="cft"></h3>
-        <div class="row">
-          <button class="pr" onclick="cfy()">Yes</button>
-          <button onclick="cfn()">No</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Game result popup -->
-    <div id="gov" class="modal" hidden>
-      <div class="card">
-        <h3 id="govt"></h3>
-        <p id="govm"></p>
-        <button class="pr" id="govr" onclick="again()">Play Again</button>
-        <button onclick="menu()">Menu</button>
-      </div>
-    </div>
-
-    <!-- Game View -->
-    <div id="g" hidden>
-      <div id="board-container">
-        <div id="brow">
-          <div id="bw">
-            <div id="bd"></div>
-            <div id="uz">
-              <span id="dc2"><i class="dc"></i></span>
-              <button id="un" onclick="undo()">↶ Undo</button>
+    <!-- MAIN MENU OVERLAY -->
+    <div id="mainMenu" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
+        <div class="glass-panel max-w-xl w-full p-6 md:p-8 rounded-3xl border border-amber-500/30 text-center flex flex-col items-center gap-6 shadow-2xl">
+            
+            <div class="flex flex-col items-center gap-2">
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-700 flex items-center justify-center shadow-lg border border-amber-300/40 mb-1">
+                    <i data-lucide="grid" class="w-10 h-10 text-amber-950"></i>
+                </div>
+                <h1 class="text-3xl md:text-4xl font-extrabold tracking-wide gold-text-gradient font-serif">
+                    სიტყვობანა
+                </h1>
+                <p class="text-xs md:text-sm text-amber-200/70">ქართული ინტელექტუალური სკრაბლი</p>
             </div>
-            <div id="dz">
-              <span id="dc">
-                <i class="dc"></i><i class="dc"></i><i class="dc"></i
-                ><i class="dc"></i>
-              </span>
-              <button id="rl" onclick="roll()">Roll</button>
-              <button id="cf" class="pr" onclick="ok()">Confirm</button>
-            </div>
-          </div>
-          <div id="pips">
-            <div id="ptw">
-              <div class="pip" id="pt" title="Remaining distance">
-                <i></i><b></b>
-              </div>
-              <button id="gv" onclick="giveUp()" title="Surrender">
-                <span class="ic">🏳</span><span>Surrender</span>
-              </button>
-            </div>
-            <div class="pip" id="pb" title="Remaining distance">
-              <i></i><b></b>
-            </div>
-          </div>
-        </div>
-        <div id="st">
-          <div id="tm">
-            <span class="tc" id="t0">
-              <i>White</i><b id="d0"></b><em id="r0"></em>
-            </span>
-            <span class="tc" id="t1">
-              <i>Black</i><b id="d1"></b><em id="r1"></em>
-            </span>
-          </div>
-          <span id="ms"></span>
-        </div>
-      </div>
 
-      <!-- Side Controls -->
-      <div id="ctrl-panel">
-        <button class="ctrl-btn snb" onclick="mute()" title="Game Sounds">
-          <span class="ic">🔊</span><span>Sound</span>
-        </button>
-        <button class="ctrl-btn mub" onclick="mmute()" title="Music">
-          <span class="ic">🎵</span><span>Music</span>
-        </button>
-        <button class="ctrl-btn fsb" onclick="fs()" title="Fullscreen">
-          <span class="ic">⛶</span><span class="fsbt">Fullscreen</span>
-        </button>
-        <button class="ctrl-btn" onclick="tryMenu()" title="Menu">
-          <span class="ic">☰</span><span>Menu</span>
-        </button>
-      </div>
+            <!-- MODE SELECTOR -->
+            <div class="w-full flex flex-col gap-4 my-2">
+                <div class="grid grid-cols-2 gap-2 p-1.5 bg-amber-950/40 rounded-2xl border border-amber-500/20">
+                    <button id="modeAiBtn" onclick="selectGameMode('ai')" class="py-3 px-4 rounded-xl font-bold text-sm transition flex items-center justify-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 text-amber-950 shadow-md">
+                        <i data-lucide="bot" class="w-4 h-4"></i>
+                        <span>კომპიუტერთან</span>
+                    </button>
+                    <button id="modeNetBtn" onclick="selectGameMode('lan')" class="py-3 px-4 rounded-xl font-bold text-sm transition flex items-center justify-center space-x-2 text-amber-200 hover:bg-amber-900/40">
+                        <i data-lucide="wifi" class="w-4 h-4"></i>
+                        <span>ქსელში (LAN)</span>
+                    </button>
+                </div>
+
+                <!-- VS AI OPTIONS -->
+                <div id="aiOptions" class="flex flex-col gap-3 p-4 rounded-2xl bg-amber-950/20 border border-amber-500/10">
+                    <label class="text-xs text-amber-200/80 font-semibold">მოწინააღმდეგე ბოტების რაოდენობა:</label>
+                    <div class="grid grid-cols-3 gap-2"><button onclick="setBotCount(1)" id="botCount1" class="py-2.5 rounded-xl border text-xs font-bold transition">1 ბოტი</button><button onclick="setBotCount(2)" id="botCount2" class="py-2.5 rounded-xl border text-xs font-bold transition">2 ბოტი</button><button onclick="setBotCount(3)" id="botCount3" class="py-2.5 rounded-xl border text-xs font-bold transition">3 ბოტი</button></div>
+                    <label class="text-xs text-amber-200/80 font-semibold">სირთულე:</label>
+                    <div class="grid grid-cols-3 gap-2"><button onclick="setBotLevel(1)" id="botLevel1" class="py-2.5 rounded-xl border text-xs font-bold transition">მარტივი</button><button onclick="setBotLevel(2)" id="botLevel2" class="py-2.5 rounded-xl border text-xs font-bold transition">საშუალო</button><button onclick="setBotLevel(3)" id="botLevel3" class="py-2.5 rounded-xl border text-xs font-bold transition">რთული</button></div>
+                </div>
+                <!-- LAN OPTIONS -->
+                <div id="netOptions" class="hidden flex flex-col gap-3 p-4 rounded-2xl bg-amber-950/20 border border-amber-500/10">
+                    <input id="netName" value="მოთამაშე" maxlength="16" placeholder="თქვენი სახელი" class="bg-amber-950/80 border border-amber-500/30 rounded-xl px-3 py-2 text-xs text-amber-100 focus:outline-none">
+                    <input id="netServer" placeholder="სერვერი, მაგ. 192.168.1.5:3000" class="hidden bg-amber-950/80 border border-amber-500/30 rounded-xl px-3 py-2 text-xs text-amber-100 focus:outline-none">
+                    <div id="netStatus" class="text-xs text-left"></div>
+                    <div id="netIdle" class="flex flex-col gap-2">
+                        <button onclick="netCreate()" class="w-full py-2.5 bg-amber-600 hover:bg-amber-500 text-amber-950 font-bold text-sm rounded-xl transition">+ მაგიდის შექმნა</button>
+                        <div class="text-[11px] text-amber-200/60 text-left mt-1">ღია მაგიდები:</div>
+                        <div id="netTables" class="flex flex-col gap-1.5 text-left"></div>
+                    </div>
+                    <div id="netRoom" class="hidden flex flex-col gap-2">
+                        <div id="netLobby" class="text-xs text-left"></div>
+                        <button onclick="netLeaveTable()" class="w-full py-2 border border-amber-500/30 text-amber-200 text-xs font-bold rounded-xl hover:bg-amber-900/40 transition">მაგიდის დატოვება</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- START GAME BUTTON -->
+            <button id="startGameBtn" onclick="startGame()" class="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-amber-950 font-black text-base shadow-xl shadow-amber-900/50 transition active:scale-95 flex items-center justify-center space-x-2">
+                <i data-lucide="play" class="w-5 h-5 fill-current"></i>
+                <span id="startBtnText">თამაშის დაწყება</span>
+            </button>
+            <div id="dictStatus" class="text-[11px] text-amber-200/50">ლექსიკონი იტვირთება...</div>
+
+            <div class="flex gap-4 text-xs text-amber-200/60">
+                <button onclick="openModal('rulesModal')" class="hover:text-amber-300 transition flex items-center gap-1">
+                    <i data-lucide="book-open" class="w-3.5 h-3.5"></i> წესები
+                </button>
+                •
+                <button onclick="downloadWordlist()" class="hover:text-amber-300 transition flex items-center gap-1">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i> ლექსიკონის ჩამოტვირთვა
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOP HEADER / NAVBAR -->
+    <header class="max-w-[1400px] w-full mx-auto mb-1 flex items-center justify-between glass-panel p-2 md:p-2.5 rounded-xl">
+        <div role="button" tabindex="0" onclick="askLeave()" title="მთავარ გვერდზე დაბრუნება" class="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition">
+            <div class="w-8 h-8 md:w-9 md:h-9 rounded-lg bg-gradient-to-br from-amber-400 to-amber-700 flex items-center justify-center shadow-lg border border-amber-300/40">
+                <i data-lucide="grid" class="w-4 h-4 md:w-5 md:h-5 text-amber-950"></i>
+            </div>
+            <div>
+                <h1 class="text-base md:text-lg font-extrabold tracking-wide gold-text-gradient font-serif">
+                    სიტყვობანა
+                </h1>
+                <p class="text-xs text-amber-200/60 hidden sm:block">ქართული ინტელექტუალური სკრაბლი</p>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-2 sm:space-x-4">
+            <button id="soundToggleBtn" onclick="toggleSound()" class="p-2.5 rounded-xl bg-amber-950/60 hover:bg-amber-900/80 border border-amber-600/30 text-amber-200 transition" title="ხმის ჩართვა/გამორთვა">
+                <i id="soundIcon" data-lucide="volume-2" class="w-5 h-5"></i>
+            </button>
+            <button onclick="openModal('rulesModal')" class="p-2.5 rounded-xl bg-amber-950/60 hover:bg-amber-900/80 border border-amber-600/30 text-amber-200 transition flex items-center space-x-1.5 text-xs font-semibold">
+                <i data-lucide="book-open" class="w-4 h-4"></i>
+                <span class="hidden sm:inline">წესები</span>
+            </button>
+            <button onclick="openModal('dictModal')" class="p-2.5 rounded-xl bg-amber-950/60 hover:bg-amber-900/80 border border-amber-600/30 text-amber-200 transition flex items-center space-x-1.5 text-xs font-semibold">
+                <i data-lucide="search" class="w-4 h-4"></i>
+                <span class="hidden sm:inline">ლექსიკონი</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN GAME AREA -->
+    <main class="max-w-[1400px] w-full mx-auto grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-2 lg:gap-3 items-start flex-grow min-h-0">
+        
+        <!-- LEFT PANEL: SCOREBOARD & CONTROLS -->
+        <section class="side-panel flex flex-col gap-1.5 order-2 lg:order-1 shrink-0">
+            
+            <!-- SCORES CARD -->
+            <div class="glass-panel p-2.5 rounded-xl flex flex-col gap-1.5">
+                <h2 class="text-[10px] uppercase tracking-wider text-amber-400/80 font-bold flex items-center justify-between border-b border-amber-500/20 pb-1">
+                    <span>ანგარიში</span>
+                    <i data-lucide="trophy" class="w-4 h-4 text-amber-400"></i>
+                </h2>
+
+                <div id="playersList" class="flex flex-col gap-2">
+                    <!-- Dynamic Player Score Cards -->
+                </div>
+
+                <!-- TILES LEFT -->
+                <div class="mt-1 pt-2 border-t border-amber-500/10 flex justify-between items-center text-xs">
+                    <span class="text-amber-200/60">დარჩენილი ასოები:</span>
+                    <span id="bagCount" class="font-bold text-amber-400 text-sm">0</span>
+                </div>
+            </div>
+
+            <!-- ACTION BUTTONS -->
+            <div class="glass-panel p-2 rounded-xl flex flex-col gap-1.5">
+                <button id="submitBtn" onclick="submitWord()" class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-600 via-amber-500 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-amber-950 font-black text-sm shadow-lg shadow-amber-900/40 transition active:scale-95 flex items-center justify-center space-x-2">
+                    <i data-lucide="check-circle" class="w-5 h-5"></i>
+                    <span>სვლის დადასტურება</span>
+                </button>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="recallClick()" class="py-2 px-3 rounded-xl bg-amber-950/60 hover:bg-amber-900/80 border border-amber-600/30 text-amber-200 text-xs font-bold transition flex items-center justify-center space-x-1">
+                        <i data-lucide="undo" class="w-3.5 h-3.5"></i>
+                        <span>დაბრუნება</span>
+                    </button>
+                    <button onclick="passTurn()" class="py-2 px-3 rounded-xl bg-amber-950/60 hover:bg-amber-900/80 border border-amber-600/30 text-amber-200 text-xs font-bold transition flex items-center justify-center space-x-1">
+                        <i data-lucide="skip-forward" class="w-3.5 h-3.5"></i>
+                        <span>გატარება</span>
+                    </button>
+                </div>
+                <button onclick="swapTiles()" class="w-full py-2 px-3 rounded-xl bg-amber-950/40 hover:bg-amber-900/60 border border-amber-600/20 text-amber-300/80 text-xs font-semibold transition flex items-center justify-center space-x-1">
+                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                    <span>ასოების შეცვლა</span>
+                </button>
+            </div>
+
+            <!-- LOG BOX -->
+            <div class="glass-panel p-2 rounded-xl flex flex-col h-56 md:h-72 min-h-0">
+                <h3 class="text-[11px] font-bold text-amber-400/80 uppercase tracking-wider mb-2 flex items-center space-x-1">
+                    <i data-lucide="history" class="w-3.5 h-3.5"></i>
+                    <span>თამაშის ისტორია</span>
+                </h3>
+                <div id="gameLog" class="flex-grow overflow-y-auto space-y-1.5 text-xs pr-1">
+                    <div class="text-amber-200/50 italic text-[11px]">თამაში დაიწყო. წარმატებები!</div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- CENTER PANEL: BOARD & RACK -->
+        <section class="flex flex-col gap-1.5 items-center order-1 lg:order-2 min-w-0 w-full">
+            
+            <!-- SCRABBLE BOARD CONTAINER -->
+            <div class="wood-frame board-wrap">
+                <div id="board" class="scrabble-board w-full aspect-square">
+                    <!-- Board cells dynamically rendered in JS -->
+                </div>
+            </div>
+
+            <!-- PLAYER TILE RACK -->
+            <div class="board-wrap flex flex-col items-center gap-1">
+                <div class="text-[11px] text-amber-300/70 font-semibold flex flex-wrap justify-center items-center gap-2">
+                    <span id="rackOwner">თქვენი ასოები:</span>
+                    <button onclick="shuffleRack()" class="px-2 py-0.5 rounded-lg border border-amber-600/30 text-amber-200 hover:bg-amber-900/60">შერევა</button>
+                    <span id="pendingScore" class="text-amber-400 font-bold hidden">(მიმდინარე: +0 ქულა)</span>
+                    <span id="turnTimer" class="hidden"></span>
+                </div>
+                <div id="rack" class="rack-container w-full min-h-[52px] flex items-center justify-center gap-1 md:gap-1.5">
+                    <!-- Rack tiles rendered in JS -->
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="max-w-[1400px] w-full mx-auto mt-1 text-center text-[10px] text-amber-200/40 py-1">
+        ქართული სკრაბლი &copy; 2026
+    </footer>
+
+    <!-- RULES MODAL -->
+    <div id="rulesModal" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
+        <div class="glass-panel max-w-lg w-full p-6 rounded-2xl relative max-h-[85vh] overflow-y-auto">
+            <button onclick="closeModal('rulesModal')" class="absolute top-4 right-4 text-amber-400 hover:text-amber-200">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <h2 class="text-xl font-bold text-amber-300 mb-4 flex items-center gap-2">
+                <i data-lucide="book-open" class="w-5 h-5"></i>
+                თამაშის წესები
+            </h2>
+            <div class="text-sm text-amber-100/80 space-y-3 leading-relaxed">
+                <p><strong class="text-amber-300">მიზანი:</strong> შეადგინეთ ქართული სიტყვები დაფაზე და დააგროვეთ მაქსიმალური ქულა.</p>
+                <p><strong class="text-amber-300">ხმოვნების ბალანსი:</strong> თამაში ავტომატურად გაძლევთ ხელში მინიმუმ 2 და მაქსიმუმ 4 ხმოვანს (`ა`, `ე`, `ი`, `ო`, `უ`), რათა სიტყვის აწყობა ყოველთვის შესაძლებელი იყოს.</p>
+                <p><strong class="text-amber-300">სიტყვების ვალიდაცია:</strong> სიტყვა მიიღება მხოლოდ მაშინ, თუ ის ზუსტად არის ლექსიკონში (ბრუნვებისა და ფორმების ჩათვლით). დაფაზე ყველა წარმოქმნილი სიტყვა, მათ შორის გადამკვეთი, უნდა იყოს ვალიდური. 2-ასოიანი სიტყვები: მხოლოდ მცირე, ხელით შერჩეული სია.</p>
+                <p><strong class="text-amber-300">დასრულება:</strong> თამაში მთავრდება, როცა ტომარა და ერთ-ერთი მოთამაშის ასოები ამოიწურება, ან ყველა ზედიზედ 2-ჯერ გაატარებს სვლას. დარჩენილი ასოების ქულა აკლდება მფლობელს და ემატება გამარჯვებულს.</p>
+                <p><strong class="text-amber-300">დრო:</strong> თითო სვლაზე გაქვთ 2 წუთი. თუ ვერ მოასწარით, დაფაზე დადებული ასოები უკან დაგიბრუნდებათ და სვლა შემდეგ მოთამაშეზე გადადის.</p>
+                <p><strong class="text-amber-300">პირველი სვლა:</strong> პირველი სიტყვა აუცილებლად უნდა გაიაროს დაფის ცენტრალურ უჯრაზე (★).</p>
+                <div class="p-3 bg-amber-950/50 rounded-xl border border-amber-500/20 text-xs space-y-1">
+                    <div class="font-bold text-amber-300 mb-1">ბონუს უჯრები:</div>
+                    <div class="text-sky-300">● DL (ორმაგი ასო) - ასოს ქულა ორმაგდება</div>
+                    <div class="text-blue-400 font-bold">● TL (სამმაგი ასო) - ასოს ქულა სამმაგდება</div>
+                    <div class="text-rose-300">● DW (ორმაგი სიტყვა) - მთელი სიტყვის ქულა ორმაგდება</div>
+                    <div class="text-red-400 font-bold">● TW (სამმაგი სიტყვა) - მთელი სიტყვის ქულა სამმაგდება</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DICTIONARY SEARCH MODAL -->
+    <div id="dictModal" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
+        <div class="glass-panel max-w-md w-full p-6 rounded-2xl relative">
+            <button onclick="closeModal('dictModal')" class="absolute top-4 right-4 text-amber-400 hover:text-amber-200">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <h2 class="text-xl font-bold text-amber-300 mb-4 flex items-center gap-2">
+                <i data-lucide="search" class="w-5 h-5"></i>
+                ქართული ლექსიკონი
+            </h2>
+            <div class="space-y-4">
+                <p class="text-xs text-amber-200/70">შემოწმეთ, არის თუ არა სიტყვა თამაშის ოფიციალურ ბაზაში:</p>
+                <div class="flex gap-2">
+                    <input type="text" id="dictInput" placeholder="ჩაწერეთ სიტყვა..." class="flex-grow bg-amber-950/80 border border-amber-500/40 rounded-xl px-3 py-2 text-amber-100 placeholder-amber-200/40 focus:outline-none focus:border-amber-400 text-sm">
+                    <button onclick="checkDictWord()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-amber-950 font-bold text-sm rounded-xl transition">
+                        შემოწმება
+                    </button>
+                </div>
+                <div id="dictResult" class="min-h-[40px] text-sm flex items-center justify-center rounded-xl p-2"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="gameOverModal" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
+        <div class="glass-panel max-w-sm w-full p-6 rounded-2xl text-center">
+            <h2 class="text-xl font-bold text-amber-300 mb-3">თამაში დასრულდა</h2>
+            <div id="finalList" class="space-y-2 mb-4 text-sm"></div>
+            <div class="flex gap-2">
+                <button onclick="closeModal('gameOverModal')" class="flex-1 py-2 rounded-xl border border-amber-500/30 text-amber-200 text-sm font-bold">დახურვა</button>
+                <button onclick="exitToMenu()" class="flex-1 py-2 rounded-xl bg-amber-600 text-amber-950 text-sm font-black">ახალი თამაში</button>
+            </div>
+        </div>
+    </div>
+    <div id="leaveModal" class="fixed inset-0 bg-black/90 hidden z-[60] flex items-center justify-center p-4">
+        <div class="glass-panel max-w-sm w-full p-6 rounded-2xl text-center">
+            <h2 class="text-xl font-bold text-amber-300 mb-2">გსურთ დატოვოთ თამაში?</h2>
+            <p id="leaveText" class="text-xs text-amber-200/60 mb-4">მიმდინარე თამაში დასრულდება.</p>
+            <div class="flex gap-2">
+                <button onclick="closeModal('leaveModal')" class="flex-1 py-2.5 rounded-xl border border-amber-500/30 text-amber-200 text-sm font-bold">დარჩენა</button>
+                <button onclick="exitToMenu()" class="flex-1 py-2.5 rounded-xl bg-amber-600 text-amber-950 text-sm font-black">დატოვება</button>
+            </div>
+        </div>
     </div>
 
     <script>
-      // სერვერის მისამართი (render.com). CrazyGames-ზე თამაში ამ სერვერს უკავშირდება.
-      const SRV =
-        /onrender\.com$|^localhost$|^\d+\.\d+\.\d+\.\d+$/.test(location.hostname)
-          ? ""
-          : "https://backgammon-game-x434.onrender.com";
-      const A = (p, r) => (p ? 23 - r : r),
-        $ = (s) => document.querySelector(s),
-        P = ["", "4", "08", "048", "0268", "04268", "023568"];
-      let G,
-        sel = null,
-        es,
-        myId,
-        AC,
-        dg,
-        nx = 0,
-        cm = 0,
-        hcOpt = 0;
-      try {
-        cm = +localStorage.getItem("nardCm") || 0;
-      } catch (e) {}
-      const TD = 10,
-        TR = 60;
-      const later = (f, t) => {
-        const g = G;
-        setTimeout(() => g == G && f(), t);
-      };
-      const show = (id) => {
-        ["m", "lb", "op", "df", "g"].map((k) => ($("#" + k).hidden = k != id));
-        music(id == "g" ? "g" : "m");
-      };
-      const menu = () => {
-        $("#gov").hidden = 1;
-        cgPlay(0);
-        cgLeft();
-        es && api({ t: "leave" });
-        es && es.close();
-        es = 0;
-        G && (G.over = 1);
-        $("#rqd").hidden = 1;
-        $("#cfd").hidden = 1;
-        show("m");
-      };
-      const mineT = () =>
-        G && G.ty[G.turn] == "h" && !G.over && !G.busy && G.legal.length > 0;
-      let muted = 0,
-        mmuted = 0,
-        sdkMute = 0;
-      const SN = {
-          d: ["roll1", "roll2", "roll3", "roll4"],
-          m: ["move1", "move2", "move3"],
-          h: ["hit"],
-          c: ["confirm"],
-          u: ["undo"],
-          w: ["win"],
-          l: ["loose"],
-          k: ["click"],
-        },
-        VOL = { d: 0.5, m: 1, h: 1, c: 0.8, u: 0.8, w: 0.8, l: 0.8, k: 0.7 },
-        EX = ["mp3", "wav", "ogg"],
-        SA = {};
-      for (const k in SN)
-        SA[k] = SN[k].map((n) => {
-          const a = new Audio();
-          let i = 0;
-          a.preload = "auto";
-          a.onerror = () => {
-            ++i < 3 ? (a.src = `sounds/${n}.${EX[i]}`) : (a.bad = 1);
-          };
-          a.src = `sounds/${n}.mp3`;
-          return a;
-        });
-      /* Background music: menubg.mp3 in menu, gamebg.mp3 in game */
-      const mkMusic = (n) => {
-        const a = new Audio(),
-          S = [`sounds/${n}.mp3`, `${n}.mp3`];
-        let i = 0;
-        a.loop = true;
-        a.volume = 0.35;
-        a.preload = "auto";
-        a.onerror = () => {
-          ++i < S.length ? (a.src = S[i]) : (a.bad = 1);
+        const GEORGIAN_LETTERS = {
+            'ა': { score: 1, count: 10, isVowel: true },
+            'ბ': { score: 2, count: 4, isVowel: false },
+            'გ': { score: 2, count: 4, isVowel: false },
+            'დ': { score: 2, count: 4, isVowel: false },
+            'ე': { score: 1, count: 8, isVowel: true },
+            'ვ': { score: 3, count: 3, isVowel: false },
+            'ზ': { score: 4, count: 2, isVowel: false },
+            'თ': { score: 2, count: 4, isVowel: false },
+            'ი': { score: 1, count: 8, isVowel: true },
+            'კ': { score: 3, count: 3, isVowel: false },
+            'ლ': { score: 2, count: 4, isVowel: false },
+            'მ': { score: 2, count: 4, isVowel: false },
+            'ნ': { score: 1, count: 7, isVowel: false },
+            'ო': { score: 1, count: 7, isVowel: true },
+            'პ': { score: 5, count: 2, isVowel: false },
+            'ჟ': { score: 8, count: 1, isVowel: false },
+            'რ': { score: 1, count: 6, isVowel: false },
+            'ს': { score: 2, count: 5, isVowel: false },
+            'ტ': { score: 3, count: 3, isVowel: false },
+            'უ': { score: 2, count: 4, isVowel: true },
+            'ფ': { score: 4, count: 2, isVowel: false },
+            'ქ': { score: 3, count: 3, isVowel: false },
+            'ღ': { score: 4, count: 2, isVowel: false },
+            'ყ': { score: 5, count: 2, isVowel: false },
+            'შ': { score: 3, count: 3, isVowel: false },
+            'ჩ': { score: 4, count: 2, isVowel: false },
+            'ც': { score: 4, count: 2, isVowel: false },
+            'ძ': { score: 6, count: 2, isVowel: false },
+            'წ': { score: 3, count: 3, isVowel: false },
+            'ჭ': { score: 6, count: 2, isVowel: false },
+            'ხ': { score: 3, count: 3, isVowel: false },
+            'ჯ': { score: 6, count: 2, isVowel: false },
+            'ჰ': { score: 8, count: 1, isVowel: false }
         };
-        a.src = S[0];
-        return a;
-      };
-      const MU = { m: mkMusic("menubg"), g: mkMusic("gamebg") };
-      let curMu = "m";
-      function music(k) {
-        curMu = k;
-        for (const x in MU) x != k && MU[x].pause();
-        !mmuted && !sdkMute && !MU[k].bad && MU[k].play().catch(() => {});
-      }
-      const kick = () => !mmuted && !sdkMute && MU[curMu].paused && music(curMu);
-      addEventListener("pointerdown", kick);
-      addEventListener("keydown", kick);
-      const mute = () => {
-        muted = !muted;
-        document.querySelectorAll(".snb").forEach((b) => {
-          b.querySelector(".ic").textContent = muted ? "🔇" : "🔊";
-          b.classList.toggle("off", !!muted);
-        });
-      };
-      const mmute = () => {
-        mmuted = !mmuted;
-        document.querySelectorAll(".mub").forEach((b) => b.classList.toggle("off", !!mmuted));
-        mmuted ? Object.values(MU).forEach((a) => a.pause()) : music(curMu);
-      };
-      /* click.mp3 on every menu button (not on in-game buttons) */
-      document.addEventListener("click", (e) => {
-        const b = e.target.closest && e.target.closest("button");
-        b && !b.closest("#g") && snd("k");
-      });
-      function snd(k) {
-        if (muted || sdkMute) return;
-        const L = (SA[k] || []).filter((a) => !a.bad && a.readyState > 2);
-        if (L.length) {
-          let a;
-          do a = L[(Math.random() * L.length) | 0];
-          while (L.length > 1 && a == SA[k].last);
-          SA[k].last = a;
-          const c = a.cloneNode();
-          c.volume = VOL[k];
-          c.play().catch(() => {});
-          return;
-        }
-        if (k == "k") return;
-        try {
-          AC = AC || new AudioContext();
-          AC.resume();
-          const T = AC.currentTime,
-            b = (f, s, d, y, v) => {
-              const o = AC.createOscillator(),
-                g = AC.createGain();
-              o.type = y || "sine";
-              o.frequency.value = f;
-              g.gain.setValueAtTime(v || 0.2, T + s);
-              g.gain.exponentialRampToValueAtTime(0.001, T + s + d);
-              o.connect(g);
-              g.connect(AC.destination);
-              o.start(T + s);
-              o.stop(T + s + d);
-            };
-          const nz = (s, d, f, v) => {
-            const n = (AC.sampleRate * d) | 0,
-              u = AC.createBuffer(1, n, AC.sampleRate),
-              x = u.getChannelData(0),
-              o = AC.createBufferSource(),
-              l = AC.createBiquadFilter(),
-              g = AC.createGain();
-            for (let i = 0; i < n; i++)
-              x[i] = (Math.random() * 2 - 1) * (1 - i / n);
-            o.buffer = u;
-            l.type = "bandpass";
-            l.frequency.value = f;
-            l.Q.value = 1.2;
-            g.gain.value = v;
-            o.connect(l);
-            l.connect(g);
-            g.connect(AC.destination);
-            o.start(T + s);
-          };
-          if (k == "d")
-            for (let i = 0; i < 12; i++) {
-              const s = Math.pow(i / 11, 1.3) * 0.36;
-              nz(
-                s,
-                0.03 + Math.random() * 0.03,
-                1200 + Math.random() * 2800,
-                0.4 - i * 0.02,
-              );
-              i % 3 == 0 && b(150 + Math.random() * 80, s, 0.06, "sine", 0.1);
-            }
-          if (k == "m") {
-            nz(0, 0.05, 2200, 1.2);
-            b(160, 0, 0.08, "sine", 0.4);
-          }
-          if (k == "h") {
-            nz(0, 0.07, 900, 1.5);
-            b(85, 0, 0.22, "sine", 0.6);
-          }
-          if (k == "c") {
-            b(523, 0, 0.15);
-            b(784, 0.12, 0.25);
-          }
-          if (k == "u") b(300, 0, 0.1, "triangle");
-          if (k == "w")
-            [523, 659, 784, 1047].map((f, i) => b(f, i * 0.15, 0.3));
-          if (k == "l")
-            [392, 330, 262, 196].map((f, i) =>
-              b(f, i * 0.18, 0.35, "triangle"),
-            );
-        } catch (e) {}
-      }
-      function gen(S, p, d, hk) {
-        const c = S.c[p],
-          q = S.c[1 - p],
-          o = [];
-        if (S.bar[p]) return q[A(p, d - 1)] < 2 ? [-1] : [];
-        let mn = 24,
-          home = 1;
-        for (let r = 0; r < 24; r++)
-          if (c[A(p, r)]) {
-            mn = Math.min(mn, r);
-            if (r < 18) home = 0;
-          }
-        for (let r = 0; r < 24; r++) {
-          if (!c[A(p, r)]) continue;
-          const t = r + d;
-          if (t >= 24) {
-            if (home && (t == 24 || r == mn)) o.push(r);
-          } else if (q[A(p, t)] < 2 && !(hk && hk.includes(r) && c[A(p, t)]))
-            o.push(r);
-        }
-        return o;
-      }
-      function ap(S, p, r, d) {
-        const c = S.c.map((x) => x.slice()),
-          bar = S.bar.slice(),
-          off = S.off.slice(),
-          q = 1 - p;
-        r < 0 ? bar[p]-- : c[p][A(p, r)]--;
-        const t = r + d;
-        if (t >= 24) off[p]++;
-        else {
-          const a = A(p, t);
-          if (c[q][a]) {
-            c[q][a] = 0;
-            bar[q]++;
-          }
-          c[p][a]++;
-        }
-        return { c, bar, off };
-      }
-      function seqs(S, p, d) {
-        let B = [],
-          m = 0;
-        const q = 1 - p,
-          R = G.hc;
-        (function go(S, rem, path, hk) {
-          let any = 0;
-          for (const x of new Set(rem))
-            for (const r of gen(S, p, x, hk)) {
-              any = 1;
-              const z = rem.slice(),
-                t = r + x,
-                k = hk.slice();
-              z.splice(z.indexOf(x), 1);
-              if (R) {
-                const mk = k.includes(r);
-                if (mk) k.splice(k.indexOf(r), 1);
-                if (t < 24 && (mk || (t >= 18 && S.c[q][A(p, t)]))) k.push(t);
-              }
-              go(ap(S, p, r, x), z, path.concat([[r, x]]), k);
-            }
-          if (!any && path.length) {
-            if (path.length > m) {
-              m = path.length;
-              B = [];
-            }
-            if (path.length == m) B.push(path);
-          }
-        })(S, d[0] == d[1] ? [d[0], d[0], d[0], d[0]] : d, [], []);
-        if (m == 1 && d[0] != d[1]) {
-          const M = Math.max(...d);
-          if (B.some((s) => s[0][1] == M)) B = B.filter((s) => s[0][1] == M);
-        }
-        return B;
-      }
-      function ev(S, p, hd) {
-        const q = 1 - p,
-          m = S.c[p],
-          o = S.c[q],
-          E = [];
-        let v = (S.bar[q] - S.bar[p]) * 25,
-          run = 0,
-          pr = 0;
-        for (let a = 0; a < 24; a++) {
-          v += o[a] * (24 - A(q, a)) - m[a] * (24 - A(p, a));
-          if (o[a]) E.push(A(p, a));
-        }
-        if (S.bar[q]) E.push(24);
-        if (hd)
-          for (let r = 0; r < 24; r++) {
-            const n = m[A(p, r)];
-            if (n == 1)
-              v -= E.reduce(
-                (s, x) =>
-                  s +
-                  (x > r && x < r + 7 ? 9 : x > r + 6 && x < r + 13 ? 3 : 0),
-                0,
-              );
-            if (n > 1) {
-              v += 3 + (r >= 18) * 3;
-              pr = Math.max(pr, ++run);
-            } else run = 0;
-          }
-        return v + pr * pr * 2;
-      }
-      function pick(L, p, lv) {
-        if (!lv) return L[(Math.random() * L.length) | 0];
-        let b,
-          bv = -1e9;
-        for (const s of L) {
-          const v =
-            ev(
-              s.reduce((S, [r, d]) => ap(S, p, r, d), G.S),
-              p,
-              lv > 1,
-            ) +
-            Math.random() * (lv > 1 ? 0.3 : 4);
-          if (v > bv) {
-            bv = v;
-            b = s;
-          }
-        }
-        return b;
-      }
-      const aiGo = () => {
-        if (G.over) return;
-        const m = G.plan && G.plan.shift();
-        if (m) return mv(m[0], m[1]);
-        const f = G.legal[0] && G.legal[0][0];
-        f ? mv(f[0], f[1]) : end();
-      };
-      function start(ty, nm, V, x) {
-        const c = [Array(24).fill(0), Array(24).fill(0)];
-        [0, 1].map((p) =>
-          [
-            [0, 2],
-            [11, 5],
-            [16, 3],
-            [18, 5],
-          ].map(([r, n]) => (c[p][A(p, r)] = n)),
-        );
-        G = Object.assign(
-          {
-            S: { c, bar: [0, 0], off: [0, 0] },
-            turn: 0,
-            rem: [],
-            dice: [],
-            legal: [],
-            hist: [],
-            ty,
-            nm,
-            view: V,
-            hc: hcOpt,
-            open: 1,
-            od: [0, 0],
-            tm: [TR * 1000, TR * 1000],
-          },
-          x,
-        );
-        const g = G;
-        g.iv = setInterval(() => {
-          if (g != G || g.over) clearInterval(g.iv);
-          else clock();
-        }, 200);
-        snd();
-        show("g");
-        cgPlay(1);
-        turn();
-      }
-      const ai = (lv) =>
-        start(["h", "ai"], ["Your turn (White)", "Computer turn (Black)"], 0, {
-          lv,
-        });
-      function turn() {
-        sel = null;
-        G.skip = 0;
-        G.ds = TD * 1000;
-        G.tl = Date.now();
-        G.tp = 0;
-        G.ng = 0;
-        const p = G.turn;
-        G.msg = G.open
-          ? ["White", "Black"][p] + " rolls – highest roll starts"
-          : G.nm[p];
-        draw();
-        if (
-          !G.open &&
-          G.S.bar[p] &&
-          [1, 2, 3, 4, 5, 6].every((d) => !gen(G.S, p, d).length)
-        ) {
-          G.msg = ["White", "Black"][p] + " cannot enter – turn skipped";
-          G.tp = 1;
-          G.skip = 1;
-          draw();
-          return later(end, 1500);
-        }
-        if (G.ty[p] == "ai") later(() => roll(), 700);
-      }
-      function end() {
-        if (G.over) return;
-        G.turn = 1 - G.turn;
-        G.rem = [];
-        G.dice = [];
-        G.legal = [];
-        G.hist = [];
-        turn();
-      }
-      const ms = (v) => {
-        const s = Math.ceil(Math.max(0, v) / 1000);
-        return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
-      };
-      function tshow() {
-        [0, 1].forEach((i) => {
-          const a = G.ty[i] == "ai",
-            act = G.turn == i && !G.over;
-          $("#t" + i).classList.toggle("on", act);
-          $("#t" + i + " i").textContent = (G.pn && G.pn[i]) || ["White", "Black"][i];
-          $("#t" + i).classList.toggle(
-            "lo",
-            act && !a && !G.ty.includes("ai") && G.ds <= 0,
-          );
-          $("#d" + i).textContent =
-            !a && !G.ty.includes("ai") && act && G.go && G.ds > 0
-              ? Math.ceil(G.ds / 1000)
-              : "";
-          $("#r" + i).textContent = a
-            ? "🤖"
-            : G.ty.includes("ai")
-              ? "∞"
-              : ms(G.tm[i]);
-        });
-      }
-      const me = () =>
-        G.ty.filter((t) => t == "h").length == 1 ? G.ty.indexOf("h") : -1;
-      function fin(w, why) {
-        cgPlay(0);
-        G.over = 1;
-        G.win = w;
-        G.legal = [];
-        G.rem = [];
-        sel = null;
-        const h = me();
-        G.msg =
-          (why || "") +
-          (h < 0
-            ? "🏆 " + ["White", "Black"][w] + " wins!"
-            : w == h
-              ? "🏆 You win!"
-              : "😞 You lose");
-        snd(h < 0 || w == h ? "w" : "l");
-      }
-      function timeout(p) {
-        if (G.over) return;
-        const h = me();
-        fin(
-          1 - p,
-          "⏱ " +
-            (h < 0
-              ? ["White's", "Black's"][p]
-              : p == h
-                ? "Your"
-                : "Opponent's") +
-            " time ran out. ",
-        );
-        draw();
-      }
-      function clock() {
-        const now = Date.now(),
-          dt = now - G.tl,
-          p = G.turn;
-        G.tl = now;
-        if (!G.go) return tshow();
-        if (!G.tp && !G.ty.includes("ai")) {
-          if (G.ds > 0) {
-            G.ds -= dt;
-            if (G.ds < 0) {
-              G.tm[p] += G.ds;
-              G.ds = 0;
-            }
-          } else G.tm[p] -= dt;
-          if (G.tm[p] <= 0) {
-            G.tm[p] = 0;
-            if (G.on) return tshow(); // online: the server declares the timeout
-            if (G.ty[p] == "h") return timeout(p);
-          }
-        }
-        tshow();
-      }
-      function ok() {
-        if (!G.hist.length || G.legal.length || G.ty[G.turn] != "h") return;
-        if (G.on) net({ t: "c" });
-        snd("c");
-        end();
-      }
-      function undo() {
-        const p = G.turn;
-        if (!G.hist.length || G.over || G.busy) return;
-        if (G.on && G.ty[p] == "h") net({ t: "u" });
-        let h;
-        do h = G.hist.pop();
-        while (h.c && G.hist.length);
-        G.S = h.S;
-        G.rem = h.rem;
-        G.legal = h.legal;
-        G.msg = G.nm[p];
-        sel = null;
-        snd("u");
-        draw();
-      }
-      const rnd = () => (1 + Math.random() * 6) | 0;
-      function opened(p, x) {
-        G.od[p] = x;
-        G.dice = [];
-        if (!G.od[1 - p]) {
-          G.turn = 1 - p;
-          return turn();
-        }
-        const [a, b] = G.od;
-        G.skip = 1;
-        if (a == b) {
-          G.msg = "Both rolled " + a + " – roll again";
-          draw();
-          return later(() => {
-            G.od = [0, 0];
-            G.turn = 0;
-            turn();
-          }, 1500);
-        }
-        const w = a > b ? 0 : 1;
-        G.msg =
-          ["White", "Black"][w] +
-          " starts with " +
-          Math.max(a, b) +
-          "-" +
-          Math.min(a, b);
-        draw();
-        later(() => {
-          G.open = 0;
-          G.od = 0;
-          G.skip = 0;
-          G.turn = w;
-          G.ds = TD * 1000;
-          G.tl = Date.now();
-          G.tp = 0;
-          G.ng = 0;
-          G.go = 1;
-          G.dice = [a, b];
-          G.msg = G.nm[w];
-          after([a, b], w);
-        }, 1500);
-      }
-      function after(d, p) {
-        G.rem = d[0] == d[1] ? [d[0], d[0], d[0], d[0]] : d.slice();
-        G.legal = seqs(G.S, p, d);
-        if (!G.legal.length) {
-          G.rem = [];
-          G.msg = "No available moves";
-          G.tp = 1;
-          draw();
-          return later(end, 1500);
-        }
-        draw();
-        if (G.ty[p] == "ai") {
-          G.plan = pick(G.legal, p, G.lv).slice();
-          later(aiGo, 500);
-        }
-      }
-      function roll(d) {
-        const p = G.turn;
-        if (G.dice.length || G.over || G.skip) return;
-        if (G.on && !d) {
-          // online: the server rolls the dice and sends them to both players
-          if (G.ty[p] == "h" && !G.wait) {
-            const g = G;
-            g.wait = 1;
-            setTimeout(() => (g.wait = 0), 3000);
-            net({ t: "r" });
-          }
-          return;
-        }
-        G.wait = 0;
-        const op = G.open;
-        d = d || (op ? [rnd()] : [rnd(), rnd()]);
-        G.dice = d;
-        if (!op) G.go = 1;
-        snd("d");
-        draw();
-        let n = 5;
-        (function sp() {
-          if (G.over) return;
-          if (n--) {
-            G.fake = op ? [rnd()] : [rnd(), rnd()];
-            dr();
-            later(sp, 68);
-            return;
-          }
-          G.fake = 0;
-          if (op) return opened(p, d[0]);
-          after(d, p);
-        })();
-      }
-      const elOf = (r) =>
-        $(r < 0 ? `.bz[data-p="${G.turn}"]` : `.p[data-a="${A(G.turn, r)}"]`);
-      const fly = (el, f) => {
-        if (!el || !f) return;
-        const b = el.getBoundingClientRect();
-        el.animate(
-          [
-            {
-              transform: `translate(${f.left - b.left}px,${f.top - b.top}px)`,
-              zIndex: 9,
-            },
-            { transform: "none", zIndex: 9 },
-          ],
-          { duration: 260, easing: "cubic-bezier(.3,.7,.3,1)" },
-        );
-      };
-      function mv(r, d, from, c, z) {
-        const p = G.turn,
-          q = 1 - p,
-          t = r + d,
-          se = elOf(r),
-          f =
-            from ||
-            (se &&
-              se.lastElementChild &&
-              se.lastElementChild.getBoundingClientRect()),
-          he = t < 24 && G.S.c[q][A(p, t)] ? elOf(t) : 0,
-          hf =
-            (z && z.hf) ||
-            (he &&
-              he.lastElementChild &&
-              he.lastElementChild.getBoundingClientRect());
-        if (G.on && G.ty[p] == "h") net({ t: "m", r, d, c });
-        G.hist.push({ S: G.S, rem: G.rem.slice(), legal: G.legal, c });
-        G.S = ap(G.S, p, r, d);
-        G.rem.splice(G.rem.indexOf(d), 1);
-        sel = null;
-        G.legal = G.legal
-          .filter((s) => s[0][0] == r && s[0][1] == d)
-          .map((s) => s.slice(1))
-          .filter((s) => s.length);
-        G.msg = G.legal.length || G.ty[p] != "h" ? G.nm[p] : "Confirm move";
-        if (z && z.q) return;
-        snd((z ? z.h : hf) ? "h" : "m");
-        if (G.S.off[p] == 15) fin(p);
-        draw();
-        fly(t < 24 ? elOf(t).lastElementChild : $(`.tr[data-p="${p}"] .k`), f);
-        hf && fly($(`.bz[data-p="${q}"]`).lastElementChild, hf);
-        if (!G.over && G.ty[p] == "ai")
-          G.legal.length ? later(aiGo, 500) : later(end, 700);
-      }
-      function opts(r) {
-        const O = [],
-          k = {};
-        for (const s of G.legal) {
-          if (s[0][0] != r) continue;
-          let pos = r;
-          for (let i = 0; i < s.length && s[i][0] == pos; i++) {
-            pos += s[i][1];
-            const key = pos < 24 ? pos : "o" + i + "." + s[0][1];
-            if (!k[key]) {
-              k[key] = 1;
-              O.push({ t: pos, seq: s.slice(0, i + 1) });
-            }
-            if (pos >= 24) break;
-          }
-        }
-        return O;
-      }
-      function play(seq, from) {
-        const p = G.turn,
-          q = 1 - p,
-          se = elOf(seq[0][0]),
-          f =
-            from ||
-            (se &&
-              se.lastElementChild &&
-              se.lastElementChild.getBoundingClientRect());
-        let S = G.S,
-          hit = 0,
-          hf = 0;
-        for (const [r, d] of seq) {
-          const t = r + d;
-          if (t < 24 && S.c[q][A(p, t)]) {
-            if (!hf) {
-              const e = elOf(t);
-              hf =
-                e &&
-                e.lastElementChild &&
-                e.lastElementChild.getBoundingClientRect();
-            }
-            hit = 1;
-          }
-          S = ap(S, p, r, d);
-        }
-        seq.forEach(([r, d], i) =>
-          mv(r, d, f, i > 0, { q: i < seq.length - 1, h: hit, hf }),
-        );
-      }
-      const src = (el) => {
-        const p = G.turn;
-        return el.classList.contains("p")
-          ? A(p, +el.dataset.a)
-          : el.classList.contains("bz") && el.dataset.p == p
-            ? -1
-            : null;
-      };
-      function pickMove(r, el) {
-        if (!el || r == null) return;
-        const p = G.turn,
-          O = opts(r);
-        if (el.classList.contains("tr"))
-          return el.dataset.p == p
-            ? O.filter((o) => o.t >= 24).sort(
-                (x, y) =>
-                  x.seq.length - y.seq.length || x.seq[0][1] - y.seq[0][1],
-              )[0]
-            : 0;
-        const a = +el.dataset.a;
-        return O.find((o) => o.t < 24 && A(p, o.t) == a);
-      }
-      function click(el) {
-        const r = src(el);
-        if (!cm && r != null) {
-          const L = G.legal.filter((s) => s[0][0] == r);
-          if (L.length)
-            return play([L.reduce((a, s) => (s[0][1] > a[0][1] ? s : a))[0]]);
-        }
-        const o = sel != null && pickMove(sel, el);
-        if (o) return play(o.seq);
-        sel =
-          r != null && r != sel && G.legal.some((s) => s[0][0] == r) ? r : null;
-        draw();
-      }
-      function cmode(v) {
-        cm = v;
-        try {
-          localStorage.setItem("nardCm", v);
-        } catch (e) {}
-        $("#cm0").classList.toggle("pr", !v);
-        $("#cm1").classList.toggle("pr", !!v);
-        $("#cmh").textContent = [
-          "Single click on a checker plays it with the highest die. Drag & drop works in both modes.",
-          "Select a checker first, then click the target point. Drag & drop works in both modes.",
-        ][v];
-      }
-      cmode(cm);
-      music("m");
-      $("#bd").onpointerdown = (e) => {
-        const el = e.target.closest(".p,.bz,.tr");
-        if (!el || e.button || !mineT()) return;
-        dg = { el, r: src(el), x: e.clientX, y: e.clientY };
-      };
-      onpointermove = (e) => {
-        if (!dg) return;
-        if (
-          !dg.g &&
-          Math.hypot(e.clientX - dg.x, e.clientY - dg.y) > 6 &&
-          dg.r != null &&
-          G.legal.some((s) => s[0][0] == dg.r)
-        ) {
-          sel = dg.r;
-          draw();
-          const t = elOf(dg.r).lastElementChild,
-            b = t.getBoundingClientRect(),
-            g = t.cloneNode(true);
-          t.style.opacity = 0.3;
-          g.style.cssText = `position:fixed;width:${b.width}px;margin:0;pointer-events:none;z-index:99`;
-          document.body.append(g);
-          dg.g = g;
-          dg.w = b.width;
-        }
-        if (dg.g) {
-          dg.g.style.left = e.clientX - dg.w / 2 + "px";
-          dg.g.style.top = e.clientY - dg.w / 2 + "px";
-        }
-      };
-      onpointerup = (e) => {
-        if (!dg) return;
-        const d = dg;
-        dg = 0;
-        if (!d.g) return click(d.el);
-        const gr = d.g.getBoundingClientRect();
-        d.g.remove();
-        const o = pickMove(
-          d.r,
-          document
-            .elementFromPoint(e.clientX, e.clientY)
-            ?.closest(".p,.bz,.tr"),
-        );
-        o ? play(o.seq, gr) : draw();
-      };
-      onpointercancel = () => {
-        if (dg) {
-          dg.g && dg.g.remove();
-          dg = 0;
-          draw();
-        }
-      };
-      let cfA = null;
-      function confirmBox(txt, f) {
-        cfA = f;
-        $("#cft").textContent = txt;
-        $("#cfd").hidden = 0;
-      }
-      function cfn() {
-        cfA = null;
-        $("#cfd").hidden = 1;
-      }
-      function cfy() {
-        const f = cfA;
-        cfn();
-        f && f();
-      }
-      function tryMenu() {
-        G && !G.over
-          ? confirmBox("Do you want to quit the game?", menu)
-          : menu();
-      }
-      function giveUp() {
-        G && !G.over && confirmBox("Do you want to surrender?", surrender);
-      }
-      function surrender() {
-        if (!G || G.over) return;
-        const h = me(),
-          p = h < 0 ? G.turn : h;
-        if (G.on) net({ t: "sf" });
-        fin(
-          1 - p,
-          "🏳 " +
-            (h < 0
-              ? ["White", "Black"][p] + " surrendered. "
-              : "You surrendered. "),
-        );
-        draw();
-      }
-      function rematch() {
-        $("#rqd").hidden = 1;
-        const o = G.on ? { on: 1, hc: G.hc, pn: G.pn } : G.lv != null ? { lv: G.lv } : {};
-        start(G.ty, G.nm, G.view, o);
-      }
-      function again() {
-        if (!G || !G.over) return;
-        if (!G.on) return rematch();
-        if (G.ask || G.left) return;
-        G.ask = 1;
-        net({ t: "rq" });
-        draw();
-      }
-      function reply(v) {
-        $("#rqd").hidden = 1;
-        if (!G || !G.on) return;
-        if (v) {
-          net({ t: "ra" });
-          rematch();
-        } else net({ t: "rn" });
-      }
-      const dv = (box, l, c) =>
-        [...$(box).children].forEach((e, i) => {
-          const o = l[i];
-          e.hidden = !o;
-          if (!o) return;
-          e.innerHTML = Array.from(
-            { length: 9 },
-            (_, j) => `<b${P[o.n].includes(j) ? " class=o" : ""}></b>`,
-          ).join("");
-          e.classList.toggle("x", !!o.x);
-          e.classList.toggle("sp", !!o.sp);
-          e.classList.toggle("bk", c == 1);
-        });
-      function dr() {
-        const p = G.turn,
-          a = [],
-          b = [];
-        $("#bw").classList.toggle("l", p != G.view);
-        if (G.open) {
-          const o = G.od || [0, 0];
-          if (G.fake) a.push({ n: G.fake[0], sp: 1 });
-          else if (o[p]) a.push({ n: o[p] });
-          else if (G.ty[p] == "h" && !G.over && !G.skip) a.push({ n: 5 });
-          if (o[1 - p]) b.push({ n: o[1 - p] });
-        } else if (G.fake) G.fake.forEach((n) => a.push({ n, sp: 1 }));
-        else if (G.dice.length) {
-          const r = G.rem.slice();
-          (G.dice[0] == G.dice[1] ? Array(4).fill(G.dice[0]) : G.dice).forEach(
-            (n) => {
-              const i = r.indexOf(n);
-              if (i < 0) a.push({ n, x: 1 });
-              else {
-                r.splice(i, 1);
-                a.push({ n });
-              }
-            },
-          );
-        } else if (G.ty[p] == "h" && !G.over)
-          [5, 3].forEach((n) => a.push({ n }));
-        dv("#dc", a, p);
-        dv("#dc2", b, 1 - p);
-      }
-      function draw() {
-        const p = G.turn,
-          V = G.view,
-          L = G.legal.map((s) => s[0]),
-          can = mineT(),
-          h1 = G.ty[p] == "h" && !G.over && !G.busy && !G.skip,
-          O = can && sel != null ? opts(sel) : [];
-        let h = "";
-        const ck = (i, n) =>
-          Array.from(
-            { length: Math.min(n, 5) },
-            (_, j) =>
-              `<div class="k ${i ? "b" : "w"}"><span>${n > 5 && j == 4 ? n : ""}</span></div>`,
-          ).join("");
-        for (let u = 1; u >= 0; u--)
-          for (let c = 0; c < 12; c++) {
-            const s = u ? 11 - c : 12 + c,
-              a = V ? 23 - s : s,
-              n0 = G.S.c[0][a],
-              n1 = G.S.c[1][a],
-              r = A(p, a),
-              oo = O.filter((o) => o.t < 24 && A(p, o.t) == a),
-              cl = oo.length
-                ? "t" + (oo[0].seq.length > 1 ? " c2" : "")
-                : can && G.S.c[p][a] && L.some((o) => o[0] == r)
-                  ? r == sel
-                    ? "s"
-                    : "m"
-                  : "";
-            h += `<div class="p ${u ? "u" : "d"} ${s % 2 ? "o" : ""} ${cl}" data-a="${a}" style="grid-column:${c < 6 ? c + 1 : c + 2}">${ck(n1 ? 1 : 0, n0 + n1)}</div>`;
-          }
-        [1 - V, V].map((i, k) => {
-          h += `<div class="bz ${k ? "" : "bu"} ${can && i == p && G.S.bar[i] ? (sel == -1 ? "s" : "m") : ""}" data-p="${i}" style="grid-column:7;grid-row:${k + 1}">${ck(i, G.S.bar[i])}</div>`;
-          h += `<div class="tr ${O.some((o) => o.t >= 24) && i == p ? "t" : ""}" data-p="${i}" style="grid-column:14;grid-row:${k + 1}"><div class="k ${i ? "b" : "w"}"><span>${G.S.off[i]}</span></div></div>`;
-        });
-        $("#bd").innerHTML = h;
-        $("#ms").textContent = G.msg;
-        dr();
-        const cf = h1 && G.hist.length && !G.legal.length;
-        $("#rl").hidden = !(h1 && !G.dice.length);
-        $("#un").hidden = !(h1 && G.hist.length);
-        $("#cf").hidden = !cf;
-        $("#dc").hidden = !!cf || !!G.over;
-        $("#gv").hidden = !!G.over;
-        const rs = $("#rs");
-        const txt = G.ask ? "Waiting for response..." : "Play Again",
-          h0 = me();
-        $("#gov").hidden = !(G.over && G.win != null);
-        $("#govr").hidden = !!G.left;
-        $("#govr").disabled = !!G.ask;
-        $("#govr").textContent = txt;
-        $("#govt").textContent =
-          h0 < 0
-            ? ["White", "Black"][G.win] + " wins!"
-            : G.win == h0
-              ? "🏆 You Win!"
-              : "😞 You Lose";
-        $("#govm").textContent = G.msg;
-        const pc = (i) => {
-          let s = G.S.bar[i] * 25;
-          for (let r = 0; r < 24; r++) s += G.S.c[i][A(i, r)] * (24 - r);
-          return s;
-        };
-        [
-          ["pt", 1 - V],
-          ["pb", V],
-        ].forEach(([id, i]) => {
-          const e = $("#" + id);
-          e.className = "pip " + (i ? "b" : "w");
-          e.querySelector("b").textContent = pc(i);
-        });
-        tshow();
-      }
-      async function fs() {
-        const d = document,
-          e = d.documentElement,
-          rq = e.requestFullscreen || e.webkitRequestFullscreen,
-          ex = d.exitFullscreen || d.webkitExitFullscreen;
-        try {
-          if (d.fullscreenElement || d.webkitFullscreenElement) {
-            await ex.call(d);
-            return;
-          }
-          if (rq) await rq.call(e);
-        } catch (x) {}
-        try {
-          await screen.orientation.lock("landscape");
-        } catch (x) {
-          try {
-            await screen.orientation.lock("landscape-primary");
-          } catch (y) {}
-        }
-      }
-      document.onfullscreenchange = document.onwebkitfullscreenchange = () => {
-        const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
-        document.querySelectorAll(".fsbt").forEach((e) => (e.textContent = isFs ? "Exit Fullscreen" : "Fullscreen"));
-        if (!isFs && screen.orientation && screen.orientation.unlock) {
-          screen.orientation.unlock();
-        }
-      };
-      if (!document.documentElement.requestFullscreen && !document.documentElement.webkitRequestFullscreen)
-        document.querySelectorAll(".fsb").forEach((b) => (b.style.display = "none"));
-      const api = (o) =>
-        fetch(SRV + "/api", {
-          method: "POST",
-          body: JSON.stringify({ ...o, id: myId, un: cgName }),
-        }).catch(() => {});
-      const net = (m) => api(m);
-      addEventListener("pagehide", () => {
-        if (es && myId)
-          try {
-            navigator.sendBeacon(
-              SRV + "/api",
-              JSON.stringify({ t: "leave", id: myId }),
-            );
-          } catch (e) {}
-      });
-      function mk() {
-        myPw = ($("#pw").value || "").trim();
-        api({
-          t: "create",
-          name: $("#nm").value.trim() || cgName || "Table",
-          pw: ($("#pw").value || "").trim(),
-        });
-      }
-      function lobby() {
-        show("lb");
-        if (es) return;
-        try {
-          myId = sessionStorage.nardTok;
-        } catch (e) {}
-        if (!myId) {
-          myId = Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) =>
-            b.toString(16).padStart(2, "0"),
-          ).join("");
-          try {
-            sessionStorage.nardTok = myId;
-          } catch (e) {}
-        }
-        es = new EventSource(SRV + "/ev?tok=" + myId);
-        es.onerror = () => {
-          $("#tl").innerHTML = "<p>Connecting to the server...</p>";
-        };
-        es.onmessage = (e) => {
-          const m = JSON.parse(e.data);
-          if (m.t == "hi") {
-            if (want) {
-              api({ t: "join", tid: want, pw: wantPw });
-              want = 0;
-            } else if (inst) {
-              api({ t: "create", name: cgName || "Table", priv: 1 });
-              inst = 0;
-            }
-          }
-          if (m.t == "badpw") $("#lm").textContent = "Wrong password";
-          if (m.t == "nojoin")
-            $("#lm").textContent = "That table is no longer available";
-          if (m.t == "hi" && !m.ing && G && G.on && !G.over) {
-            G.left = 1;
-            fin(G.ty.indexOf("net"), "📡 Connection lost. ");
-          }
-          if (m.t == "made") {
-            $("#lm").textContent = "Table created, waiting for opponent...";
-            myTid = m.tid;
-            $("#inv").hidden = !myTid;
-            cgRoom(1);
-          }
-          if (m.t == "tables")
-            $("#tl").innerHTML = m.l.length
-              ? m.l
-                  .map(
-                    (t) =>
-                      `<div class="tb"><span>${t.lock ? "🔒 " : ""}${t.name.replace(/[<>&"'`]/g, "")}</span><button class="pr" onclick="joinT(${t.id},${t.lock ? 1 : 0})">Join</button></div>`,
-                  )
-                  .join("")
-              : "<p>No open tables available</p>";
-          if (m.t == "go") {
-            myTid = m.tid;
-            $("#inv").hidden = 1;
-            cgRoom(0);
-          }
-          if (m.t == "go")
-            start(
-              m.seat ? ["net", "h"] : ["h", "net"],
-              [0, 1].map(
-                (i) =>
-                  (i == m.seat ? "Your" : "Opponent's") +
-                  " turn (" +
-                  ["White", "Black"][i] +
-                  ")",
-              ),
-              m.seat,
-              {
-                on: 1,
-                hc: 0,
-                pn: m.names,
-                ...(m.st && {
-                  S: m.st.S,
-                  turn: m.st.turn,
-                  tm: m.st.tm,
-                  ...(!m.st.op && { open: 0, od: 0, go: 1 }),
-                }),
-              },
-            );
-          // reconnect: restore the rolled dice of the current turn
-          if (m.t == "go" && m.st && !m.st.op && m.st.dice.length) {
-            G.dice = m.st.dice;
-            after(m.st.dice, m.st.turn);
-          }
-          if (
-            G &&
-            G.on &&
-            ["r", "m", "u", "c", "to", "dc", "sf", "rq", "ra", "rn"].includes(m.t)
-          ) {
-            const w = Math.max(Date.now(), nx);
-            nx = w + (m.t == "r" ? 420 : m.t == "m" ? 320 : 0);
-            later(() => {
-              if (m.t == "r") roll(m.d);
-              if (m.t == "m") mv(m.r, m.d, 0, m.c);
-              if (m.t == "u") undo();
-              if (m.t == "c") end();
-              if (m.t == "to") timeout(m.p);
-              if (m.t == "dc" && !G.over) {
-                cgLeft();
-                G.left = 1;
-                fin(
-                  1 - G.ty.indexOf("net"),
-                  m.why == "left"
-                    ? "Opponent left the game. "
-                    : "📡 Opponent disconnected. ",
-                );
-                draw();
-              }
-              if (m.t == "sf" && !G.over) {
-                fin(1 - G.ty.indexOf("net"), "🏳 Opponent surrendered. ");
-                draw();
-              }
-              if (m.t == "rq") {
-                if (G.ask) {
-                  net({ t: "ra" });
-                  rematch();
-                } else $("#rqd").hidden = 0;
-              }
-              if (m.t == "ra" && G.ask) rematch();
-              if (m.t == "rn" && G.ask) {
-                G.ask = 0;
-                G.msg = "Opponent declined";
-                draw();
-              }
-            }, w - Date.now());
-          }
-          if (m.t == "left" && G && G.on) {
-            cgLeft();
-            G.left = 1;
-            G.ask = 0;
-            G.msg = "Opponent left";
-            draw();
-          }
-        };
-      }
 
-      /* ---- CrazyGames SDK: invite link, room data, instant multiplayer, mute ---- */
-      let CG = 0,
-        want = 0,
-        inst = 0,
-        myTid = 0,
-        myPw = "",
-        wantPw = "",
-        urlJoin = 0,
-        cgName = "";
-      const cgOn = () => !!CG;
-      let cgPlaying = 0;
-      function cgPlay(on) {
-        if (!cgOn() || cgPlaying == on) return;
-        cgPlaying = on;
-        try {
-          on ? CG.game.gameplayStart() : CG.game.gameplayStop();
-        } catch (e) {}
-      }
-      const invParams = () => (myPw ? { tid: String(myTid), pw: myPw } : { tid: String(myTid) });
-      function joinT(tid, lock) {
-        let pw = "";
-        if (lock) {
-          pw = prompt("Table password:") || "";
-          if (!pw) return;
+        const VOWELS = ['ა', 'ე', 'ი', 'ო', 'უ'];
+
+        let audioCtx = null;
+        let soundEnabled = true;
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }
-        api({ t: "join", tid, pw });
-      }
-      function cgRoom(open) {
-        if (!cgOn() || !myTid) return;
-        try {
-          CG.game.updateRoom(
-            open
-              ? { roomId: "bg" + myTid, isJoinable: true, inviteParams: invParams() }
-              : { roomId: "bg" + myTid, isJoinable: false },
-          );
-        } catch (e) {}
-      }
-      function cgLeft() {
-        $("#inv").hidden = 1;
-        myTid = 0;
-        if (cgOn())
-          try {
-            CG.game.leftRoom();
-          } catch (e) {}
-      }
-      function copyInvite() {
-        if (!myTid) return;
-        let link = location.origin + location.pathname + "?tid=" + myTid + (myPw ? "&pw=" + encodeURIComponent(myPw) : "");
-        if (cgOn())
-          try {
-            link = CG.game.inviteLink(invParams()) || link;
-          } catch (e) {}
-        if (!link) return;
-        const ok = () => ($("#lm").textContent = "Invite link copied! Send it to your friend.");
-        navigator.clipboard
-          ? navigator.clipboard.writeText(link).then(ok, () => prompt("Copy this link:", link))
-          : prompt("Copy this link:", link);
-      }
-      function joinInvite(p) {
-        const tid = p && +p.tid;
-        if (!tid) return;
-        want = tid;
-        wantPw = p.pw || "";
-        if (es) {
-          show("lb");
-          $("#lm").textContent = "Joining table...";
-          api({ t: "join", tid, pw: wantPw });
-          want = 0;
-        } else {
-          lobby();
-          $("#lm").textContent = "Joining table...";
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            try {
+                initAudio();
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'place') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.exponentialRampToValueAtTime(120, now + 0.05);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.05);
+                    osc.start(now);
+                    osc.stop(now + 0.05);
+                } else if (type === 'score') {
+                    [523.25, 659.25, 783.99].forEach((freq, idx) => {
+                        const o = audioCtx.createOscillator();
+                        const g = audioCtx.createGain();
+                        o.type = 'sine';
+                        o.frequency.setValueAtTime(freq, now + idx * 0.06);
+                        g.gain.setValueAtTime(0.12, now + idx * 0.06);
+                        g.gain.linearRampToValueAtTime(0.001, now + idx * 0.06 + 0.3);
+                        o.connect(g);
+                        g.connect(audioCtx.destination);
+                        o.start(now + idx * 0.06);
+                        o.stop(now + idx * 0.06 + 0.3);
+                    });
+                } else if (type === 'error') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.setValueAtTime(180, now + 0.08);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
+                    osc.start(now);
+                    osc.stop(now + 0.15);
+                }
+            } catch (e) {}
         }
-      }
-      {
-        const q = new URLSearchParams(location.search);
-        if (q.get("tid")) {
-          urlJoin = 1;
-          joinInvite({ tid: q.get("tid"), pw: q.get("pw") || "" });
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('soundIcon');
+            icon.setAttribute('data-lucide', soundEnabled ? 'volume-2' : 'volume-x');
+            lucide.createIcons();
+            if (soundEnabled) playSound('place');
         }
-      }
-      (async function cgInit() {
-        try {
-          await window.CrazyGames.SDK.init();
-          const S = window.CrazyGames.SDK;
-          if (S.environment == "disabled") return;
-          CG = S;
-          try {
-            CG.game.loadingStart();
-            const done = () => {
-              try {
-                CG.game.loadingStop();
-              } catch (e) {}
+
+        const PREMIUM_TILES = {
+            '0,0':'TW', '0,7':'TW', '0,14':'TW', '7,0':'TW', '7,14':'TW', '14,0':'TW', '14,7':'TW', '14,14':'TW',
+            '1,1':'DW', '2,2':'DW', '3,3':'DW', '4,4':'DW', '10,10':'DW', '11,11':'DW', '12,12':'DW', '13,13':'DW',
+            '1,13':'DW', '2,12':'DW', '3,11':'DW', '4,10':'DW', '10,4':'DW', '11,3':'DW', '12,2':'DW', '13,1':'DW',
+            '1,5':'TL', '1,9':'TL', '5,1':'TL', '5,5':'TL', '5,9':'TL', '5,13':'TL',
+            '9,1':'TL', '9,5':'TL', '9,9':'TL', '9,13':'TL', '13,5':'TL', '13,9':'TL',
+            '0,3':'DL', '0,11':'DL', '2,6':'DL', '2,8':'DL', '3,0':'DL', '3,7':'DL', '3,14':'DL',
+            '6,2':'DL', '6,6':'DL', '6,8':'DL', '6,12':'DL', '7,3':'DL', '7,11':'DL',
+            '8,2':'DL', '8,6':'DL', '8,8':'DL', '8,12':'DL', '11,0':'DL', '11,7':'DL', '11,14':'DL',
+            '12,6':'DL', '12,8':'DL', '14,3':'DL', '14,11':'DL',
+            '7,7':'CENTER'
+        };
+
+        /* ===== DICTIONARY (words.js / words.txt only — no guessed morphology) ===== */
+        let WORDS = [], DICT = new Set(), dictReady = false, FULL = null, COMMON = null;
+        const useDict = d => { WORDS = d.words; DICT = d.set; };
+        function mkDict(raw) {
+            const set = new Set();
+            for (const line of raw.split(/\r?\n/)) {
+                const w = line.trim().split(/\s+/)[0];
+                if (w && w.length >= 2 && /^[ა-ჰ]+$/.test(w)) set.add(w);
+            }
+            return { words: Array.from(set).sort(), set };
+        }
+
+        function setDictStatus(txt, cls) {
+            const el = document.getElementById('dictStatus');
+            if (el) { el.textContent = txt; el.className = 'text-[11px] ' + cls; }
+        }
+
+        async function loadDictionary() {
+            let raw = window.WORDS_RAW;
+            if (!raw) {
+                try { raw = await (await fetch('words.txt')).text(); } catch (e) { /* ignore */ }
+            }
+            if (!raw) { setDictStatus('ლექსიკონი ვერ ჩაიტვირთა: words.js ან words.txt ფაილი index.html-ის გვერდით უნდა იდოს', 'text-red-400'); return; }
+            FULL = mkDict(raw);
+            COMMON = FULL;   // ბოტიც და მოთამაშეც ერთსა და იმავე სიას იყენებს
+            useDict(FULL);
+            dictReady = true;
+            setDictStatus(`ლექსიკონი მზადაა: ${FULL.words.length.toLocaleString()} სიტყვა`, 'text-emerald-400');
+        }
+
+        const isWord = w => DICT.has(w);
+        function hasPrefix(p) {
+            let lo = 0, hi = WORDS.length;
+            while (lo < hi) { const m = (lo + hi) >> 1; if (WORDS[m] < p) lo = m + 1; else hi = m; }
+            return lo < WORDS.length && WORDS[lo].startsWith(p);
+        }
+
+        /* ===== GAME STATE ===== */
+        const BOARD_SIZE = 15;
+        let boardState, tempPlacedTiles = [], tileBag = [], players = [], currentTurnIndex = 0;
+        let selectedRackTileId = null, isFirstMove = true, selectedBotCount = 1, botLevel = 2;
+        let gameMode = 'ai', gameActive = false, gameOver = false;
+        let usedWords = new Set(), passStreak = 0, gameId = 0, lastMove = new Set(), cellEls = [];
+
+        const cur = () => players[currentTurnIndex];
+        const viewer = () => (gameMode === 'lan' ? players[myIdx] : players[0]);
+        const canAct = () => gameActive && !gameOver && !cur().isBot && (gameMode !== 'lan' || currentTurnIndex === myIdx);
+
+        /* ===== TILE BAG ===== */
+        function shuffle(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+        }
+        function initTileBag() {
+            tileBag = [];
+            let id = 1;
+            for (const ch in GEORGIAN_LETTERS) {
+                for (let i = 0; i < GEORGIAN_LETTERS[ch].count; i++) tileBag.push({ id: `tile-${id++}`, letter: ch, score: GEORGIAN_LETTERS[ch].score });
+            }
+            shuffle(tileBag);
+        }
+        const vowelCount = rack => rack.filter(t => VOWELS.includes(t.letter)).length;
+
+        function drawBalancedTiles(existing = [], target = 7) {
+            const need = Math.min(target - existing.length, tileBag.length);
+            if (need <= 0) return existing;
+            const drawn = tileBag.splice(tileBag.length - need, need);
+            for (let a = 0; a < 30; a++) {
+                const v = vowelCount([...existing, ...drawn]);
+                if (v >= 2 && v <= 4) break;
+                const wantVowel = v < 2;
+                const di = drawn.findIndex(t => VOWELS.includes(t.letter) !== wantVowel);
+                const bi = tileBag.findIndex(t => VOWELS.includes(t.letter) === wantVowel);
+                if (di === -1 || bi === -1) break;
+                const out = drawn.splice(di, 1)[0];
+                drawn.push(tileBag.splice(bi, 1)[0]);
+                tileBag.push(out);
+                shuffle(tileBag);
+            }
+            return [...existing, ...drawn];
+        }
+
+        /* ===== MENU ===== */
+        const ON = "bg-amber-900/60 border-amber-500/40 text-amber-200 shadow-md", OFF = "bg-amber-950/40 border-amber-500/20 text-amber-200/60";
+        function setGroup(prefix, n, count) {
+            for (let i = 1; i <= count; i++) {
+                const b = document.getElementById(prefix + i);
+                if (b) b.className = `py-2.5 rounded-xl border text-xs font-bold transition ${i === n ? ON : OFF}`;
+            }
+        }
+        function selectGameMode(mode) {
+            gameMode = mode;
+            const act = "py-3 px-2 rounded-xl font-bold text-xs transition flex items-center justify-center space-x-1 bg-gradient-to-r from-amber-600 to-amber-700 text-amber-950 shadow-md";
+            const off = "py-3 px-2 rounded-xl font-bold text-xs transition flex items-center justify-center space-x-1 text-amber-200 hover:bg-amber-900/40";
+            const ids = { ai: 'modeAiBtn', lan: 'modeNetBtn' }, opts = { ai: 'aiOptions', lan: 'netOptions' };
+            for (const k in ids) {
+                document.getElementById(ids[k]).className = k === mode ? act : off;
+                document.getElementById(opts[k]).classList.toggle('hidden', k !== mode);
+            }
+            if (mode === 'lan') {
+                if (location.protocol === 'file:') document.getElementById('netServer').classList.remove('hidden');
+                netWatch();
+            } else if (!gameActive) netReset();
+            updateNetUI();
+        }
+        function setBotCount(n) { selectedBotCount = n; setGroup('botCount', n, 3); }
+        function setBotLevel(n) { botLevel = n; setGroup('botLevel', n, 3); }
+
+        /* ===== LEAVE GAME ===== */
+        function askLeave() {
+            if (gameActive && !gameOver) {
+                document.getElementById('leaveText').textContent = (gameMode === 'lan' && isHost)
+                    ? 'თქვენ მასპინძელი ხართ — გასვლით თამაში ყველა მოთამაშისთვის დასრულდება.'
+                    : 'მიმდინარე თამაში დასრულდება.';
+                openModal('leaveModal');
+            } else exitToMenu();
+        }
+        function exitToMenu() {
+            ['gameOverModal', 'rulesModal', 'dictModal', 'leaveModal'].forEach(closeModal);
+            gameId++; gameActive = false; gameOver = false; tempPlacedTiles = [];
+            stopTurnTimer();
+            document.getElementById('mainMenu').classList.remove('hidden');
+            document.body.classList.remove('game-active');
+            if (gameMode === 'lan') { netReset(); netMsg(''); netWatch(); } else netReset();
+            updateNetUI();
+        }
+
+        function startGame() {
+            if (!dictReady) { alert('ლექსიკონი ჯერ არ ჩატვირთულა'); return; }
+            if (gameMode === 'lan' && !netCanStart()) return;
+            gameId++;
+            document.getElementById('mainMenu').classList.add('hidden');
+            closeModal('gameOverModal');
+            initBoardUI();
+            initTileBag();
+            const mk = (name, isBot) => ({ name, isBot, score: 0, rack: drawBalancedTiles([], 7) });
+            players = [];
+            if (gameMode === 'ai') {
+                players.push(mk('თქვენ', false));
+                for (let i = 1; i <= selectedBotCount; i++) players.push(mk(`ბოტი ${i}`, true));
+            } else if (gameMode === 'lan') {
+                lobby.forEach(m => players.push(mk(m.name, false)));
+                lanIds = lobby.map(m => m.id); myIdx = 0; lanStarted = true;
+            }
+            boardState = Array.from({ length: 15 }, () => Array(15).fill(null));
+            tempPlacedTiles = []; selectedRackTileId = null; lastMove = new Set();
+            currentTurnIndex = 0; isFirstMove = true; passStreak = 0; usedWords = new Set();
+            gameOver = false; gameActive = true;
+            document.body.classList.add('game-active');
+            document.getElementById('gameLog').innerHTML = '<div class="text-amber-200/50 italic text-[11px]">თამაში დაიწყო. წარმატებები!</div>';
+            startTurnTimer();
+            renderAll();
+            playSound('place');
+        }
+
+        /* ===== RENDERING ===== */
+        function premLabel(r, c) {
+            const p = PREMIUM_TILES[`${r},${c}`];
+            return p === 'CENTER' ? '★' : (p || '');
+        }
+        function initBoardUI() {
+            const boardEl = document.getElementById('board');
+            boardEl.innerHTML = '';
+            cellEls = [];
+            const cls = { TW: 'cell-tw', DW: 'cell-dw', TL: 'cell-tl', DL: 'cell-dl', CENTER: 'cell-center' };
+            for (let r = 0; r < BOARD_SIZE; r++) {
+                cellEls.push([]);
+                for (let c = 0; c < BOARD_SIZE; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell ' + (cls[PREMIUM_TILES[`${r},${c}`]] || 'cell-normal');
+                    cell.dataset.r = r; cell.dataset.c = c;
+                    cell.addEventListener('dragover', handleDragOver);
+                    cell.addEventListener('dragleave', handleDragLeave);
+                    cell.addEventListener('drop', handleDrop);
+                    cell.addEventListener('click', () => handleCellClick(r, c));
+                    boardEl.appendChild(cell);
+                    cellEls[r].push(cell);
+                }
+            }
+        }
+        function renderBoard() {
+            for (let r = 0; r < BOARD_SIZE; r++) for (let c = 0; c < BOARD_SIZE; c++) {
+                const el = cellEls[r][c];
+                const tmp = tempPlacedTiles.find(t => t.r === r && t.c === c);
+                const L = boardState[r][c] || (tmp && tmp.letter);
+                if (L) {
+                    const cls = tmp ? 'tile-temp' : (lastMove.has(`${r},${c}`) ? 'tile-last' : '');
+                    el.innerHTML = `<div class="tile w-full h-full text-base md:text-xl lg:text-2xl ${cls}"><span>${L}</span><span class="tile-score">${GEORGIAN_LETTERS[L].score}</span></div>`;
+                    if (tmp && canAct()) {
+                        const t = el.firstElementChild;
+                        t.draggable = true;
+                        t.style.cursor = 'grab';
+                        t.addEventListener('dragstart', e => {
+                            e.dataTransfer.setData('text/plain', `board:${r},${c}`);
+                            e.dataTransfer.effectAllowed = 'move';
+                            setTimeout(() => { t.style.opacity = '0.35'; }, 0);
+                        });
+                        t.addEventListener('dragend', e => {
+                            t.style.opacity = '';
+                            if (e.dataTransfer.dropEffect === 'none') returnTempToRack(r, c);   // ჩავარდა არსად => უკან ხელში
+                        });
+                    }
+                } else el.textContent = premLabel(r, c);
+            }
+        }
+        function renderScoreboard() {
+            const listEl = document.getElementById('playersList');
+            listEl.innerHTML = '';
+            players.forEach((p, idx) => {
+                const isCur = idx === currentTurnIndex && !gameOver;
+                const card = document.createElement('div');
+                card.className = `p-1.5 rounded-lg border flex justify-between items-center transition-all ${isCur ? 'bg-amber-900/40 border-amber-400/60 shadow-lg' : 'bg-amber-950/20 border-amber-500/10'}`;
+                card.innerHTML = `
+                    <div class="flex items-center space-x-2.5">
+                        <div class="w-7 h-7 rounded-lg ${p.isBot ? 'bg-amber-900/40 border-amber-500/30' : 'bg-amber-500/20 border-amber-400/40'} border flex items-center justify-center">
+                            <i data-lucide="${p.isBot ? 'bot' : 'user'}" class="w-3.5 h-3.5 text-amber-300"></i>
+                        </div>
+                        <div><div class="text-xs text-amber-200/80 font-semibold">${p.name}</div>
+                        <div class="text-base font-black text-amber-300">${p.score}</div></div>
+                    </div>
+                    ${isCur ? '<span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30 font-bold">სვლა</span>' : ''}`;
+                listEl.appendChild(card);
+            });
+            if (window.lucide) lucide.createIcons();
+        }
+        function renderRack() {
+            const rackEl = document.getElementById('rack');
+            rackEl.innerHTML = '';
+            const v = viewer();
+            document.getElementById('rackOwner').textContent = 'თქვენი ასოები:';
+            rackEl.style.opacity = (!canAct() && !gameOver) ? '0.55' : '1';
+            v.rack.forEach(tile => {
+                const d = document.createElement('div');
+                d.className = `tile w-10 h-10 md:w-12 md:h-12 text-lg md:text-xl ${selectedRackTileId === tile.id ? 'selected' : ''}`;
+                d.draggable = true;
+                d.innerHTML = `<span>${tile.letter}</span><span class="tile-score">${tile.score}</span>`;
+                d.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', tile.id); selectedRackTileId = tile.id; });
+                d.addEventListener('click', () => {
+                    if (!canAct()) return;
+                    selectedRackTileId = selectedRackTileId === tile.id ? null : tile.id;
+                    renderRack();
+                });
+                rackEl.appendChild(d);
+            });
+        }
+        function updateBagCount() { document.getElementById('bagCount').innerText = tileBag.length; }
+        function renderAll() { renderBoard(); renderScoreboard(); renderRack(); updateBagCount(); calculatePendingScore(); updateTimerUI(); if (gameMode === 'lan' && isHost) syncAll(); }
+        function shuffleRack() { if (!gameActive) return; shuffle(viewer().rack); renderRack(); }
+
+        /* ===== PLACEMENT ===== */
+        function handleDragOver(e) {
+            e.preventDefault();
+            if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+            e.currentTarget.classList.add('drag-over');
+        }
+        function handleDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+        function handleDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over');
+            const raw = e.dataTransfer.getData('text/plain');
+            const r = +e.currentTarget.dataset.r, c = +e.currentTarget.dataset.c;
+            if (raw.startsWith('board:')) {                       // დაფაზე უკვე ჩასმული ასოს გადატანა
+                const [fr, fc] = raw.slice(6).split(',').map(Number);
+                moveTempTile(fr, fc, r, c);
+                return;
+            }
+            const id = raw || selectedRackTileId;
+            if (id && canPlaceTileAt(r, c)) placeTileOnBoard(id, r, c);
+        }
+        function moveTempTile(fr, fc, r, c) {
+            if (!canAct() || (fr === r && fc === c) || !canPlaceTileAt(r, c)) return;
+            const t = tempPlacedTiles.find(x => x.r === fr && x.c === fc);
+            if (!t) return;
+            t.r = r; t.c = c;
+            renderBoard(); calculatePendingScore(); playSound('place');
+        }
+        function returnTempToRack(r, c) {
+            if (!canAct()) return;
+            const i = tempPlacedTiles.findIndex(t => t.r === r && t.c === c);
+            if (i === -1) return;
+            const t = tempPlacedTiles.splice(i, 1)[0];
+            cur().rack.push({ id: t.tileId, letter: t.letter, score: GEORGIAN_LETTERS[t.letter].score });
+            renderBoard(); renderRack(); calculatePendingScore(); playSound('place');
+        }
+        function handleCellClick(r, c) {
+            if (!canAct()) return;
+            if (tempPlacedTiles.some(t => t.r === r && t.c === c)) return returnTempToRack(r, c);
+            if (selectedRackTileId && canPlaceTileAt(r, c)) placeTileOnBoard(selectedRackTileId, r, c);
+        }
+        function canPlaceTileAt(r, c) {
+            return canAct() && boardState[r][c] === null && !tempPlacedTiles.some(t => t.r === r && t.c === c);
+        }
+        function placeTileOnBoard(tileId, r, c) {
+            const rack = cur().rack;
+            const i = rack.findIndex(t => t.id === tileId);
+            if (i === -1) return;
+            const tile = rack.splice(i, 1)[0];
+            tempPlacedTiles.push({ r, c, letter: tile.letter, tileId: tile.id });
+            selectedRackTileId = null;
+            renderBoard(); renderRack(); calculatePendingScore(); playSound('place');
+        }
+        function recallTiles() {
+            if (!tempPlacedTiles.length) return;
+            tempPlacedTiles.forEach(t => cur().rack.push({ id: t.tileId, letter: t.letter, score: GEORGIAN_LETTERS[t.letter].score }));
+            tempPlacedTiles = [];
+            renderBoard(); renderRack(); calculatePendingScore();
+        }
+        function recallClick() { if (canAct()) { recallTiles(); playSound('place'); } }
+
+        /* ===== VALIDATION & SCORING ===== */
+        function wordAt(g, r, c, dr, dc) {
+            let sr = r, sc = c;
+            while (sr - dr >= 0 && sc - dc >= 0 && g[sr - dr][sc - dc] !== null) { sr -= dr; sc -= dc; }
+            const cells = [];
+            let rr = sr, cc = sc;
+            while (rr < 15 && cc < 15 && g[rr][cc] !== null) { cells.push([rr, cc]); rr += dr; cc += dc; }
+            return { cells, str: cells.map(([a, b]) => g[a][b]).join('') };
+        }
+        function scoreWord(w, placedSet) {
+            let sum = 0, mult = 1;
+            for (const [r, c] of w.cells) {
+                let s = GEORGIAN_LETTERS[boardLetter(r, c, w)].score;
+                if (placedSet.has(`${r},${c}`)) {
+                    const p = PREMIUM_TILES[`${r},${c}`];
+                    if (p === 'DL') s *= 2; else if (p === 'TL') s *= 3;
+                    else if (p === 'DW' || p === 'CENTER') mult *= 2; else if (p === 'TW') mult *= 3;
+                }
+                sum += s;
+            }
+            return sum * mult;
+        }
+        function boardLetter(r, c, w) { return w.grid[r][c]; }
+
+        function validatePlacement(placed) {
+            const bad = error => ({ valid: false, error });
+            if (!placed.length) return bad('ასოები არ არის დასმული');
+            const seen = new Set();
+            for (const t of placed) {
+                if (!Number.isInteger(t.r) || !Number.isInteger(t.c) || t.r < 0 || t.r > 14 || t.c < 0 || t.c > 14 || !GEORGIAN_LETTERS[t.letter] || boardState[t.r][t.c] !== null || seen.has(t.r + ',' + t.c)) return bad('არასწორი უჯრა');
+                seen.add(t.r + ',' + t.c);
+            }
+            const sameRow = placed.every(t => t.r === placed[0].r), sameCol = placed.every(t => t.c === placed[0].c);
+            if (!sameRow && !sameCol) return bad('ასოები უნდა იყოს ერთ ხაზზე');
+            const g = boardState.map(row => row.slice());
+            placed.forEach(t => { g[t.r][t.c] = t.letter; });
+            const multi = placed.length > 1;
+            const horiz = multi ? sameRow : null;
+            if (multi) {
+                const idx = placed.map(t => horiz ? t.c : t.r), lo = Math.min(...idx), hi = Math.max(...idx);
+                for (let k = lo; k <= hi; k++) if ((horiz ? g[placed[0].r][k] : g[k][placed[0].c]) === null) return bad('ასოებს შორის ცარიელი უჯრაა');
+            }
+            if (isFirstMove) {
+                if (!placed.some(t => t.r === 7 && t.c === 7)) return bad('პირველი სიტყვა ცენტრზე (★) უნდა დაისვას');
+                if (!multi) return bad('პირველი სიტყვა მინიმუმ 2 ასოსგან უნდა შედგებოდეს');
+            } else {
+                const touches = placed.some(t => [[-1, 0], [1, 0], [0, -1], [0, 1]].some(([a, b]) => {
+                    const r = t.r + a, c = t.c + b;
+                    return r >= 0 && r < 15 && c >= 0 && c < 15 && boardState[r][c] !== null;
+                }));
+                if (!touches) return bad('სიტყვა უნდა ებმოდეს არსებულ ასოებს');
+            }
+            let words = [];
+            if (multi) words.push(wordAt(g, placed[0].r, placed[0].c, horiz ? 0 : 1, horiz ? 1 : 0));
+            for (const t of placed) {
+                const dirs = multi ? [horiz ? [1, 0] : [0, 1]] : [[0, 1], [1, 0]];
+                for (const [dr, dc] of dirs) {
+                    const w = wordAt(g, t.r, t.c, dr, dc);
+                    if (w.cells.length >= 2) words.push(w);
+                }
+            }
+            if (!words.length) return bad('სიტყვა ვერ შედგა');
+
+            // 1) ერთი და იგივე ფიზიკური სიტყვა (იგივე უჯრები) მხოლოდ ერთხელ
+            // 2) ერთი და იგივე ტექსტი სხვადასხვა ადგილას — აკრძალულია
+            const seenCells = new Set();
+            const seenStr = new Set();
+            const uniqueWords = [];
+            for (const w of words) {
+                const cellKey = w.cells.map(([r, c]) => `${r},${c}`).sort().join('|');
+                if (seenCells.has(cellKey)) continue; // იგივე სიტყვა სხვა ასოდან — გამოტოვე
+                if (seenStr.has(w.str)) {
+                    return bad(`ერთ სვლაში ერთი და იგივე სიტყვა ორჯერ არ შეიძლება: "${w.str}"`);
+                }
+                seenCells.add(cellKey);
+                seenStr.add(w.str);
+                uniqueWords.push(w);
+            }
+            words = uniqueWords;
+
+            const placedSet = new Set(placed.map(t => `${t.r},${t.c}`));
+            let total = 0;
+            for (const w of words) {
+                if (!isWord(w.str)) return bad(`უცნობი სიტყვა: "${w.str}"`);
+                w.grid = g;
+                total += scoreWord(w, placedSet);
+            }
+            if (placed.length === 7) total += 50;
+            return { valid: true, score: total, words: words.map(w => w.str) };
+        }
+
+        function calculatePendingScore() {
+            const badge = document.getElementById('pendingScore');
+            if (!tempPlacedTiles.length) { badge.classList.add('hidden'); return; }
+            const v = validatePlacement(tempPlacedTiles);
+            badge.innerText = v.valid ? `(მიმდინარე: +${v.score} ქულა)` : `(${v.error})`;
+            badge.classList.remove('hidden');
+            badge.classList.toggle('text-amber-400', v.valid);
+            badge.classList.toggle('text-red-400', !v.valid);
+        }
+
+        /* ===== TURNS ===== */
+        function commitMove(player, placed, v) {
+            placed.forEach(t => { boardState[t.r][t.c] = t.letter; });
+            lastMove = new Set(placed.map(t => `${t.r},${t.c}`));
+            player.score += v.score;
+            v.words.forEach(w => usedWords.add(w));
+            logMessage(`${player.name} — <b>${v.words.join(', ')}</b> (+${v.score})`, player.isBot ? 'text-amber-400' : 'text-amber-300');
+            player.rack = drawBalancedTiles(player.rack, 7);
+            tempPlacedTiles = []; isFirstMove = false; passStreak = 0;
+            playSound('score');
+            if (!tileBag.length && !player.rack.length) return endGame(player);
+            nextTurn();
+        }
+        function submitWord() {
+            if (!canAct()) return;
+            const v = validatePlacement(tempPlacedTiles);
+            if (!v.valid) { playSound('error'); logMessage(`შეცდომა: ${v.error}`, 'text-red-400'); return; }
+            if (gameMode === 'lan' && !isHost) { netToHost({ k: 'submit', placed: tempPlacedTiles.map(t => ({ r: t.r, c: t.c, letter: t.letter })) }); return; }
+            commitMove(cur(), tempPlacedTiles.map(t => ({ r: t.r, c: t.c, letter: t.letter })), v);
+        }
+        function registerPass(msg) {
+            logMessage(msg, 'text-amber-200/60');
+            passStreak++;
+            if (passStreak >= players.length * 2) return endGame(null);
+            nextTurn();
+        }
+        function passTurn() {
+            if (!canAct()) return;
+            recallTiles();
+            if (gameMode === 'lan' && !isHost) { netToHost({ k: 'pass' }); return; }
+            registerPass(`${cur().name} გაატარა სვლა`);
+        }
+        function doSwap(p) {
+            const old = p.rack;
+            p.rack = drawBalancedTiles([], 7);
+            tileBag.push(...old);
+            shuffle(tileBag);
+        }
+        function swapTiles() {
+            if (!canAct()) return;
+            if (tileBag.length < 7) { logMessage('ტომარაში საკმარისი ასოები არ არის (მინიმუმ 7)', 'text-red-400'); return; }
+            recallTiles();
+            if (gameMode === 'lan' && !isHost) { netToHost({ k: 'swap' }); return; }
+            doSwap(cur());
+            registerPass(`${cur().name} შეცვალა ასოები`);
+        }
+        function nextTurn() {
+            currentTurnIndex = (currentTurnIndex + 1) % players.length;
+            tempPlacedTiles = []; selectedRackTileId = null;
+            startTurnTimer();
+            renderAll();
+            if (cur().isBot) { const id = gameId; setTimeout(() => { if (id === gameId) playBotTurn(); }, 700); }
+        }
+
+        /* ===== TURN TIMER (2 წუთი; მასპინძელი/ლოკალური თამაში წყვეტს, სტუმრები მხოლოდ აჩვენებენ) ===== */
+        const TURN_MS = 120000;
+        let turnDeadline = null, turnTick = null;
+        const turnLeft = () => (turnDeadline ? Math.max(0, turnDeadline - Date.now()) : 0);
+        function ensureTick() { if (!turnTick) turnTick = setInterval(timerTick, 250); }
+        function startTurnTimer() {
+            turnDeadline = (gameActive && !gameOver && players.length && !cur().isBot) ? Date.now() + TURN_MS : null;
+            ensureTick(); updateTimerUI();
+        }
+        function stopTurnTimer() { turnDeadline = null; updateTimerUI(); }
+        function timerTick() {
+            updateTimerUI();
+            if (turnDeadline && turnLeft() <= 0 && (gameMode !== 'lan' || isHost)) onTurnTimeout();
+        }
+        function onTurnTimeout() {
+            turnDeadline = null;
+            if (!gameActive || gameOver || cur().isBot) return;
+            recallTiles();
+            playSound('error');
+            registerPass(`${cur().name} — დრო ამოიწურა, სვლა გადავიდა`);
+        }
+        function updateTimerUI() {
+            const el = document.getElementById('turnTimer');
+            if (!el) return;
+            if (!turnDeadline || !gameActive || gameOver) { el.classList.add('hidden'); return; }
+            const sec = Math.ceil(turnLeft() / 1000), mine = canAct();
+            el.textContent = `⏱ ${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}${mine ? '' : ' · ' + cur().name}`;
+            el.className = 'text-[11px] font-bold px-2 py-0.5 rounded-lg border ' + (sec <= 15 && mine
+                ? 'text-red-300 border-red-500/50 bg-red-900/40 animate-pulse' : 'text-amber-300 border-amber-500/30 bg-amber-950/40');
+        }
+
+        function showFinal() {
+            const sorted = [...players].sort((a, b) => b.score - a.score);
+            document.getElementById('finalList').innerHTML = sorted.map((p, i) =>
+                `<div class="flex justify-between p-2 rounded-lg ${i === 0 ? 'bg-amber-500/20 border border-amber-400/40 text-amber-200 font-bold' : 'bg-amber-950/40 text-amber-200/80'}"><span>${i === 0 ? '🏆 ' : ''}${p.name}</span><span>${p.score}</span></div>`).join('');
+            openModal('gameOverModal');
+        }
+        function endGame(outPlayer) {
+            recallTiles();
+            gameOver = true; gameActive = false;
+            document.body.classList.remove('game-active');
+            stopTurnTimer();
+            let pool = 0;
+            players.forEach(p => {
+                const left = p.rack.reduce((s, t) => s + t.score, 0);
+                p.score -= left; pool += left;
+            });
+            if (outPlayer) outPlayer.score += pool;
+            renderAll();
+            showFinal();
+            openModal('gameOverModal');
+            playSound('score');
+        }
+
+        /* ===== BOT ===== */
+        function crossWordStr(r, c, letter, vertical) {
+            const dr = vertical ? 1 : 0, dc = vertical ? 0 : 1;
+            let s = letter, rr = r - dr, cc = c - dc;
+            while (rr >= 0 && cc >= 0 && boardState[rr][cc] !== null) { s = boardState[rr][cc] + s; rr -= dr; cc -= dc; }
+            rr = r + dr; cc = c + dc;
+            while (rr < 15 && cc < 15 && boardState[rr][cc] !== null) { s += boardState[rr][cc]; rr += dr; cc += dc; }
+            return s;
+        }
+
+        function genMoves(letters) {
+            const cnt = {};
+            letters.forEach(l => { cnt[l] = (cnt[l] || 0) + 1; });
+            const moves = [];
+            for (const horiz of [true, false]) {
+                for (let i = 0; i < 15; i++) {
+                    const rc = k => (horiz ? [i, k] : [k, i]);
+                    const cell = k => (horiz ? boardState[i][k] : boardState[k][i]);
+                    const anchor = Array(15).fill(false);
+                    let minA = 99, maxA = -1;
+                    for (let k = 0; k < 15; k++) {
+                        if (cell(k) !== null) continue;
+                        const [r, c] = rc(k);
+                        anchor[k] = isFirstMove ? (r === 7 && c === 7)
+                            : [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]].some(([a, b]) => a >= 0 && a < 15 && b >= 0 && b < 15 && boardState[a][b] !== null);
+                        if (anchor[k]) { minA = Math.min(minA, k); maxA = k; }
+                    }
+                    if (maxA < 0) continue;
+                    const okCache = {};
+                    const crossOk = (k, l) => {
+                        const key = k + l;
+                        if (key in okCache) return okCache[key];
+                        const [r, c] = rc(k);
+                        const s = crossWordStr(r, c, l, horiz);
+                        return (okCache[key] = s.length === 1 || isWord(s));
+                    };
+                    const dfs = (pos, word, placed, used) => {
+                        if ((pos >= 15 || cell(pos) === null) && used && word.length >= 2 && isWord(word)) {
+                            moves.push(placed.map(([k, l]) => { const [r, c] = rc(k); return { r, c, letter: l }; }));
+                        }
+                        if (pos >= 15) return;
+                        const ex = cell(pos);
+                        if (ex !== null) {
+                            if (hasPrefix(word + ex)) dfs(pos + 1, word + ex, placed, used);
+                            return;
+                        }
+                        for (const l in cnt) {
+                            if (cnt[l] <= 0 || !crossOk(pos, l) || !hasPrefix(word + l)) continue;
+                            cnt[l]--;
+                            placed.push([pos, l]);
+                            dfs(pos + 1, word + l, placed, used || anchor[pos]);
+                            placed.pop();
+                            cnt[l]++;
+                        }
+                    };
+                    for (let s = Math.max(0, minA - 7); s <= maxA; s++) {
+                        if (s > 0 && cell(s - 1) !== null) continue;
+                        dfs(s, '', [], false);
+                    }
+                }
+            }
+            return moves;
+        }
+
+        function playBotTurn() {
+            if (!gameActive || gameOver || !cur().isBot) return;
+            const bot = cur();
+            const scored = [];
+            useDict(COMMON);   // bot plays only common, well-attested words
+            try {
+                for (const m of genMoves(bot.rack.map(t => t.letter))) {
+                    const v = validatePlacement(m);
+                    if (v.valid) scored.push({ placed: m, v });
+                }
+            } finally { useDict(FULL); }
+            const fresh = scored.filter(m => m.v.words.every(w => !usedWords.has(w)));
+            if (fresh.length) { scored.length = 0; scored.push(...fresh); }   // avoid repeating already-played words
+            scored.sort((a, b) => b.v.score - a.v.score);
+            if (scored.length) {
+                const n = scored.length;
+                const pick = botLevel === 3 ? Math.floor(Math.random() * Math.min(3, n)) : botLevel === 2 ? Math.floor(Math.random() * Math.min(5, n))
+                    : Math.floor(n / 2 + Math.random() * (n - Math.floor(n / 2)));
+                const mv = scored[Math.min(pick, n - 1)];
+                mv.placed.forEach(t => {
+                    const i = bot.rack.findIndex(x => x.letter === t.letter);
+                    if (i !== -1) bot.rack.splice(i, 1);
+                });
+                return commitMove(bot, mv.placed, mv.v);
+            }
+            if (tileBag.length >= 7) { doSwap(bot); registerPass(`${bot.name} შეცვალა ასოები`); }
+            else registerPass(`${bot.name} გაატარა სვლა`);
+        }
+
+
+        /* ===== LAN (host-authoritative; server.js only relays) ===== */
+        let ws = null, isHost = false, myIdx = 0, roomCode = '', lobby = [], lanIds = [], pendingLogs = [], lanStarted = false, rooms = [], wsQueue = [];
+        const $ = id => document.getElementById(id);
+        const esc = x => String(x).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+        function netMsg(t, bad) { $('netStatus').innerHTML = t ? `<div class="${bad ? 'text-red-400' : 'text-emerald-400'}">${t}</div>` : ''; }
+        const netName = () => ($('netName').value.trim() || 'მოთამაშე');
+        const netSend = o => { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); };
+        const netToHost = data => netSend({ t: 'toHost', data });
+
+        function renderLobby() {
+            const el = $('netLobby');
+            if (!roomCode) { el.innerHTML = ''; return; }
+            const hint = isHost ? (lobby.length < 2 ? 'ელოდებით მოთამაშეებს... თქვენი მაგიდა სხვებს სიაში გამოუჩნდებათ.' : 'როცა მზად ხართ, დაიწყეთ თამაში.') : 'ელოდებით, სანამ მასპინძელი თამაშს დაიწყებს.';
+            el.innerHTML = `<div class="text-amber-300 font-bold mb-1">მაგიდა (${lobby.length}/4)</div>` +
+                lobby.map((m, i) => `<div class="text-amber-100">• ${esc(m.name)}${i === 0 ? ' <span class="text-amber-400/70">(მასპინძელი)</span>' : ''}</div>`).join('') +
+                `<div class="mt-2 text-amber-200/60">${hint}</div>`;
+        }
+        function renderTables() {
+            const el = $('netTables');
+            el.innerHTML = rooms.length ? rooms.map(r =>
+                `<div class="flex items-center justify-between p-2 rounded-xl bg-amber-950/40 border border-amber-500/20 text-xs"><span class="text-amber-100">${esc(r.host)}-ს მაგიდა <span class="text-amber-300/70">· ${r.n}/4</span></span><button onclick="netJoinRoom('${esc(r.code)}')" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-amber-950 font-bold rounded-lg">შესვლა</button></div>`).join('')
+                : '<div class="text-[11px] text-amber-200/40 italic">ღია მაგიდა ჯერ არ არის — შექმენით თქვენი</div>';
+        }
+        function updateNetUI() {
+            if (!$('netIdle')) return;
+            const lan = gameMode === 'lan', inRoom = !!roomCode;
+            $('netIdle').classList.toggle('hidden', inRoom);
+            $('netRoom').classList.toggle('hidden', !inRoom);
+            const btn = $('startGameBtn'), wait = lan && isHost && inRoom && lobby.length < 2;
+            btn.classList.toggle('hidden', lan && !(inRoom && isHost));
+            btn.disabled = wait; btn.classList.toggle('opacity-50', wait);
+            $('startBtnText').innerText = wait ? 'ელოდებით მოთამაშეს...' : 'თამაშის დაწყება';
+        }
+
+        function netReset() {
+            if (ws) { ws.onclose = null; ws.onmessage = null; try { ws.close(); } catch (e) { } }
+            ws = null; wsQueue = []; roomCode = ''; lobby = []; rooms = []; lanStarted = false; isHost = false; pendingLogs = [];
+            if ($('netTables')) { renderTables(); renderLobby(); }
+        }
+        function netEnsure(cb) {
+            if (ws && ws.readyState === 1) return cb();
+            wsQueue.push(cb);
+            if (ws && ws.readyState === 0) return;
+            const custom = $('netServer').value.trim();
+            const host = location.protocol === 'file:' ? custom : (custom || location.host);
+            if (!host) { wsQueue = []; return netMsg('ფაილიდან გახსნისას სერვერის მისამართი ჩაწერეთ (მაგ. 192.168.1.5:3000)', true); }
+            let sock;
+            try { sock = ws = new WebSocket('ws://' + host); } catch (e) { wsQueue = []; return netMsg('ვერ დავუკავშირდი სერვერს', true); }
+            sock.onopen = () => { const q = wsQueue; wsQueue = []; q.forEach(f => f()); };
+            sock.onclose = () => {
+                if (ws !== sock) return;
+                const was = roomCode;
+                ws = null; wsQueue = []; roomCode = ''; lobby = []; rooms = []; lanStarted = false;
+                netMsg(was ? 'კავშირი გაწყდა' : 'სერვერთან დაკავშირება ვერ მოხერხდა. გაშვებულია `node server.js`?', true);
+                renderTables(); renderLobby(); updateNetUI();
             };
-            document.readyState == "complete" ? done() : addEventListener("load", done);
-          } catch (e) {}
-          try {
-            const u = await CG.user.getUser();
-            cgName = (u && u.username) || "";
-          } catch (e) {}
-          const am = (st) => {
-            sdkMute = st && st.muteAudio ? 1 : 0;
-            sdkMute ? Object.values(MU).forEach((a) => a.pause()) : music(curMu);
-          };
-          am(CG.game.settings);
-          CG.game.addSettingsChangeListener(am);
-          CG.game.addJoinRoomListener(joinInvite);
-          const ip = CG.game.inviteParams;
-          if (ip && ip.tid) urlJoin || joinInvite(ip);
-          else if (CG.game.isInstantMultiplayer && !urlJoin) {
-            inst = 1;
-            lobby();
-          }
-        } catch (e) {}
-      })();
+            sock.onmessage = e => { try { onNet(JSON.parse(e.data)); } catch (err) { } };
+        }
+        function netWatch() { netMsg(''); netEnsure(() => netSend({ t: 'watch' })); }
+        function netCreate() { isHost = true; netMsg(''); netEnsure(() => netSend({ t: 'create', name: netName() })); }
+        function netJoinRoom(code) { isHost = false; netMsg(''); netEnsure(() => netSend({ t: 'join', code, name: netName() })); }
+        function netLeaveTable() { netReset(); netMsg(''); updateNetUI(); netWatch(); }
+        function netCanStart() {
+            if (!ws || !roomCode) { netMsg('ჯერ შექმენით მაგიდა', true); return false; }
+            if (!isHost) { netMsg('თამაშს მასპინძელი დაიწყებს, დაელოდეთ', true); return false; }
+            if (lobby.length < 2) { netMsg('საჭიროა მინიმუმ 2 მოთამაშე', true); return false; }
+            return true;
+        }
+
+        function onNet(m) {
+            switch (m.t) {
+                case 'created': roomCode = m.code; isHost = true; renderLobby(); updateNetUI(); break;
+                case 'joined': roomCode = m.code; isHost = false; renderLobby(); updateNetUI(); break;
+                case 'lobby': lobby = m.members; renderLobby(); updateNetUI(); break;
+                case 'rooms': rooms = m.rooms || []; renderTables(); break;
+                case 'error': netMsg(m.msg, true); isHost = !!roomCode && isHost; break;
+                case 'closed':
+                    roomCode = ''; lobby = []; lanStarted = false; isHost = false;
+                    if (gameActive && !gameOver) { alert('მასპინძელმა დატოვა თამაში'); exitToMenu(); }
+                    else { renderLobby(); updateNetUI(); netMsg('მასპინძელმა დატოვა მაგიდა', true); netSend({ t: 'watch' }); }
+                    break;
+                case 'fromGuest': onGuestAction(m.id, m.data); break;
+                case 'left': onGuestLeft(m.id); break;
+                case 'fromHost': onHostState(m.data); break;
+            }
+        }
+
+        function syncAll() {
+            if (!ws || !lanStarted) return;
+            const pub = {
+                k: 'state', players: players.map(p => ({ name: p.name, score: p.score, isBot: p.isBot, n: p.rack.length })),
+                cur: currentTurnIndex, board: boardState, first: isFirstMove, bag: tileBag.length,
+                last: [...lastMove], over: gameOver, logs: pendingLogs, tl: turnDeadline ? turnLeft() : null
+            };
+            for (let i = 1; i < players.length; i++) {
+                if (players[i].left) continue;
+                netSend({ t: 'toClient', to: lanIds[i], data: { ...pub, me: i, rack: players[i].rack } });
+            }
+            pendingLogs = [];
+        }
+        const toGuest = (i, data) => netSend({ t: 'toClient', to: lanIds[i], data });
+
+        function onGuestAction(id, d) {
+            const i = lanIds.indexOf(id);
+            if (i < 1 || !gameActive || gameOver || i !== currentTurnIndex || !d) return;
+            const p = players[i];
+            if (d.k === 'submit') {
+                const placed = Array.isArray(d.placed) ? d.placed.slice(0, 7).map(t => ({ r: t.r, c: t.c, letter: t.letter })) : [];
+                const pool = p.rack.map(t => t.letter);
+                for (const t of placed) { const x = pool.indexOf(t.letter); if (x < 0) return toGuest(i, { k: 'err', msg: 'ასოები არ ემთხვევა' }); pool.splice(x, 1); }
+                const v = validatePlacement(placed);
+                if (!v.valid) return toGuest(i, { k: 'err', msg: v.error });
+                placed.forEach(t => p.rack.splice(p.rack.findIndex(r => r.letter === t.letter), 1));
+                commitMove(p, placed, v);
+            } else if (d.k === 'pass') registerPass(`${p.name} გაატარა სვლა`);
+            else if (d.k === 'swap') {
+                if (tileBag.length < 7) return toGuest(i, { k: 'err', msg: 'ტომარაში საკმარისი ასოები არ არის' });
+                doSwap(p); registerPass(`${p.name} შეცვალა ასოები`);
+            }
+        }
+        function onGuestLeft(id) {
+            const i = lanIds.indexOf(id);
+            if (i < 1 || !gameActive) return;
+            if (currentTurnIndex === i) turnDeadline = null;
+            players[i].isBot = true; players[i].left = true; players[i].name += ' (გავიდა, ბოტი)';
+            logMessage(`${players[i].name} დატოვა თამაში — მის ადგილს ბოტი იკავებს`, 'text-amber-200/60');
+            renderAll();
+            if (currentTurnIndex === i) { const g = gameId; setTimeout(() => { if (g === gameId) playBotTurn(); }, 700); }
+        }
+
+        function onHostState(d) {
+            if (d.k === 'err') { playSound('error'); logMessage(`შეცდომა: ${d.msg}`, 'text-red-400'); return; }
+            if (d.k !== 'state') return;
+            if (!lanStarted || (gameOver && !d.over)) {
+                gameMode = 'lan'; lanStarted = true; gameId++;
+                document.getElementById('mainMenu').classList.add('hidden');
+                closeModal('gameOverModal'); initBoardUI();
+                document.getElementById('gameLog').innerHTML = '';
+                gameOver = false; gameActive = true; lastMove = new Set();
+            }
+            myIdx = d.me;
+            players = d.players.map((p, i) => ({ name: p.name, score: p.score, isBot: p.isBot, rack: i === d.me ? d.rack : Array(p.n).fill({ letter: '?', score: 0 }) }));
+            boardState = d.board; currentTurnIndex = d.cur; isFirstMove = d.first;
+            tileBag = Array(d.bag).fill(null); lastMove = new Set(d.last);
+            turnDeadline = (d.tl != null && !d.over) ? Date.now() + d.tl : null; ensureTick();
+            tempPlacedTiles = []; selectedRackTileId = null;
+            d.logs.forEach(l => logMessage(l.msg, l.cls));
+            if (d.over && !gameOver) { gameOver = true; gameActive = false; showFinal(); }
+            renderAll();
+            if (d.logs.length) playSound('score');
+        }
+
+        /* ===== MODALS / HELPERS ===== */
+        function logMessage(msg, cls = 'text-amber-200/80') {
+            if (gameMode === 'lan' && isHost && !cls.includes('red')) pendingLogs.push({ msg, cls });
+            const item = document.createElement('div');
+            item.className = `${cls} text-xs py-0.5 border-b border-amber-500/10`;
+            item.innerHTML = msg;
+            document.getElementById('gameLog').prepend(item);
+        }
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        function checkDictWord() {
+            const input = document.getElementById('dictInput').value.trim();
+            const res = document.getElementById('dictResult');
+            if (!input) { res.innerHTML = '<span class="text-amber-300">გთხოვთ ჩაწეროთ სიტყვა.</span>'; return; }
+            res.innerHTML = isWord(input)
+                ? `<span class="text-emerald-400 font-bold">✓ "${input}" — დაშვებული სიტყვაა</span>`
+                : `<span class="text-rose-400 font-bold">✕ "${input}" — ვერ მოიძებნა ლექსიკონში</span>`;
+        }
+        function downloadWordlist() {
+            const blob = new Blob([FULL.words.join('\n')], { type: 'text/plain;charset=utf-8' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'georgian_scrabble_wordlist.txt';
+            document.body.appendChild(a); a.click(); a.remove();
+            URL.revokeObjectURL(a.href);
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide) lucide.createIcons();
+            selectGameMode('ai');
+            setBotLevel(2); setBotCount(1);
+            const rk = document.getElementById('rack');   // დაფიდან ამოღებული ასოს ხელში დაბრუნება
+            rk.addEventListener('dragover', e => { if (canAct()) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; } });
+            rk.addEventListener('drop', e => {
+                e.preventDefault();
+                const raw = e.dataTransfer.getData('text/plain');
+                if (raw.startsWith('board:')) { const [r, c] = raw.slice(6).split(',').map(Number); returnTempToRack(r, c); }
+            });
+            document.getElementById('dictInput').addEventListener('keydown', e => { if (e.key === 'Enter') checkDictWord(); });
+            loadDictionary();
+        });
+
     </script>
-  </body>
+</body>
 </html>

@@ -1,479 +1,120 @@
-// Run: node server.js   (hosting: PORT env var is supported, start command "node server.js")
-// Online multiplayer server. The server is the authority: it rolls the dice,
-// validates every move, keeps the clocks and handles reconnects.
-const http = require("http"),
-  fs = require("fs"),
-  path = require("path"),
-  { randomInt } = require("crypto");
-const PORT = +process.env.PORT || 3000;
-const TD = +process.env.TD_MS || 10000, // time per move (ms)
-  TR = +process.env.TR_MS || 60000, // reserve time per player (ms)
-  GRACE = +process.env.GRACE_MS || 20000; // reconnect grace period (ms)
-const MIME = {
-  ".html": "text/html;charset=utf-8",
-  ".mp3": "audio/mpeg",
-  ".wav": "audio/wav",
-  ".ogg": "audio/ogg",
-  ".png": "image/png",
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".webp": "image/webp",
-  ".ico": "image/x-icon",
-};
+/* სიტყვობანა — სტატიკური სერვერი + WebSocket რელე (მასპინძელი განსაზღვრავს თამაშს) */
+const http = require('http'), fs = require('fs'), path = require('path');
+const crypto = require('crypto');
+const PORT = process.env.PORT || 3000, ROOT = __dirname;
+const MIME = { '.html': 'text/html; charset=utf-8', '.txt': 'text/plain; charset=utf-8', '.js': 'text/javascript', '.json': 'application/json' };
 
-// ---- rules (same as the client)
-const A = (p, r) => (p ? 23 - r : r);
-function gen(S, p, d) {
-  const c = S.c[p],
-    q = S.c[1 - p],
-    o = [];
-  if (S.bar[p]) return q[A(p, d - 1)] < 2 ? [-1] : [];
-  let mn = 24,
-    home = 1;
-  for (let r = 0; r < 24; r++)
-    if (c[A(p, r)]) {
-      mn = Math.min(mn, r);
-      if (r < 18) home = 0;
-    }
-  for (let r = 0; r < 24; r++) {
-    if (!c[A(p, r)]) continue;
-    const t = r + d;
-    if (t >= 24) {
-      if (home && (t == 24 || r == mn)) o.push(r);
-    } else if (q[A(p, t)] < 2) o.push(r);
-  }
-  return o;
-}
-function ap(S, p, r, d) {
-  const c = S.c.map((x) => x.slice()),
-    bar = S.bar.slice(),
-    off = S.off.slice(),
-    q = 1 - p;
-  r < 0 ? bar[p]-- : c[p][A(p, r)]--;
-  const t = r + d;
-  if (t >= 24) off[p]++;
-  else {
-    const a = A(p, t);
-    if (c[q][a]) {
-      c[q][a] = 0;
-      bar[q]++;
-    }
-    c[p][a]++;
-  }
-  return { c, bar, off };
-}
-function seqs(S, p, d) {
-  let B = [],
-    m = 0;
-  (function go(S, rem, path) {
-    let any = 0;
-    for (const x of new Set(rem))
-      for (const r of gen(S, p, x)) {
-        any = 1;
-        const z = rem.slice();
-        z.splice(z.indexOf(x), 1);
-        go(ap(S, p, r, x), z, path.concat([[r, x]]));
-      }
-    if (!any && path.length) {
-      if (path.length > m) {
-        m = path.length;
-        B = [];
-      }
-      if (path.length == m) B.push(path);
-    }
-  })(S, d[0] == d[1] ? [d[0], d[0], d[0], d[0]] : d, []);
-  if (m == 1 && d[0] != d[1]) {
-    const M = Math.max(...d);
-    if (B.some((s) => s[0][1] == M)) B = B.filter((s) => s[0][1] == M);
-  }
-  return B;
-}
-// ---- end rules
+const server = http.createServer((req, res) => {
+    let p = decodeURIComponent(req.url.split('?')[0]);
+    if (p === '/') p = '/index.html';
+    const f = path.join(ROOT, path.normalize(p));
+    if (!f.startsWith(ROOT) || !['index.html', 'words.txt', 'common.txt'].includes(path.basename(f))) { res.writeHead(404); return res.end('Not found'); }
+    fs.readFile(f, (e, d) => {
+        if (e) { res.writeHead(404); return res.end('Not found'); }
+        res.writeHead(200, { 'Content-Type': MIME[path.extname(f)] || 'application/octet-stream' });
+        res.end(d);
+    });
+});
 
-const clean = (x) => String(x || "").replace(/[<>&"'`]/g, "").slice(0, 20);
-const die = () => randomInt(1, 7);
-const P = {}, // token -> { tok, res, tid, off }
-  T = {}; // id -> { id, name, h, g, G, iv }
-let tid = 0;
-const send = (tok, m) => {
-  const p = P[tok];
-  if (p && p.res) p.res.write("data:" + JSON.stringify(m) + "\n\n");
-};
-const seat = (t, tok) => (t.h == tok ? 0 : t.g == tok ? 1 : -1);
-const other = (t, tok) => (t.h == tok ? t.g : t.h);
-const both = (t, m) => {
-  send(t.h, m);
-  t.g && send(t.g, m);
-};
-const bc = () => {
-  const l = Object.values(T)
-    .filter((t) => !t.g && !t.priv)
-    .map((t) => ({ id: t.id, name: t.name, lock: t.pw ? 1 : 0 }));
-  for (const k in P) send(k, { t: "tables", l });
-};
-function removeTable(t) {
-  clearInterval(t.iv);
-  delete T[t.id];
-  [t.h, t.g].forEach((x) => P[x] && P[x].tid == t.id && (P[x].tid = 0));
-  bc();
-}
-function leaveTable(tok) {
-  const t = T[P[tok].tid];
-  if (!t) return;
-  const o = other(t, tok);
-  if (o) {
-    // leaving a running game = the opponent wins
-    const lv = t.g && t.G && !t.G.over;
-    if (lv) t.G.over = 1;
-    send(o, lv ? { t: "dc", why: "left" } : { t: "left" });
-  }
-  removeTable(t);
-}
+const rooms = new Map();   // code -> { host, members: [{id, name, ws}] }
+let nextId = 1;
+const send = (ws, o) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); };
+const lobby = r => r.members.map(m => ({ id: m.id, name: m.name }));
+const broadcastLobby = r => r.members.forEach(m => send(m.ws, { t: 'lobby', members: lobby(r) }));
+const cleanName = n => String(n || 'მოთამაშე').replace(/[<>&"'`]/g, '').trim().slice(0, 16) || 'მოთამაშე';
+const watchers = new Set();   // კლიენტები, რომლებიც ღია მაგიდების სიას ხედავენ
+const roomsList = () => [...rooms.entries()].filter(([, r]) => !r.started && r.members.length < 4).map(([code, r]) => ({ code, host: r.members[0].name, n: r.members.length }));
+const broadcastRooms = () => { const l = roomsList(); watchers.forEach(w => { if (!w.room) send(w, { t: 'rooms', rooms: l }); }); };
 
-function init() {
-  const c = [Array(24).fill(0), Array(24).fill(0)];
-  [0, 1].forEach((p) =>
-    [[0, 2], [11, 5], [16, 3], [18, 5]].forEach(
-      ([r, n]) => (c[p][A(p, r)] = n),
-    ),
-  );
-  return {
-    S: { c, bar: [0, 0], off: [0, 0] },
-    turn: 0,
-    rem: [],
-    dice: [],
-    legal: [],
-    hist: [],
-    op: 1,
-    open: [0, 0],
-    tm: [TR, TR],
-    ds: TD,
-    tl: Date.now(),
-    tp: 0,
-    go: 0,
-    over: 0,
-  };
-}
-const later = (t, g, ms, f) =>
-  setTimeout(() => t.G === g && !g.over && f(), ms);
-function startGame(t) {
-  t.G = init();
-  clearInterval(t.iv);
-  t.iv = setInterval(() => tick(t), 250);
-}
-function tick(t) {
-  const g = t.G,
-    now = Date.now(),
-    dt = now - g.tl;
-  g.tl = now;
-  if (g.over || !g.go || g.tp) return;
-  const p = g.turn;
-  if (g.ds > 0) {
-    g.ds -= dt;
-    if (g.ds < 0) {
-      g.tm[p] += g.ds;
-      g.ds = 0;
+/* ---- მინიმალური WebSocket (დამოკიდებულებების გარეშე) ---- */
+const GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11', MAX = 1 << 20;
+class Conn {
+    constructor(socket) { this.socket = socket; this.readyState = 1; this.buf = Buffer.alloc(0); this.frag = null; this.room = null; this.id = 0; }
+    send(str) {
+        if (this.readyState !== 1) return;
+        const p = Buffer.from(str), n = p.length;
+        const h = n < 126 ? Buffer.from([0x81, n]) : n < 65536 ? Buffer.from([0x81, 126, n >> 8, n & 255]) : (() => { const x = Buffer.alloc(10); x[0] = 0x81; x[1] = 127; x.writeBigUInt64BE(BigInt(n), 2); return x; })();
+        this.socket.write(Buffer.concat([h, p]));
     }
-  } else g.tm[p] -= dt;
-  if (g.tm[p] <= 0) {
-    g.tm[p] = 0;
-    g.over = 1;
-    both(t, { t: "to", p });
-  }
-}
-// after the dice are set: remaining dice, legal sequences, auto-skip if none
-function setup(t, g, extra) {
-  const d = g.dice;
-  g.rem = d[0] == d[1] ? [d[0], d[0], d[0], d[0]] : d.slice();
-  g.legal = seqs(g.S, g.turn, d);
-  if (!g.legal.length) {
-    g.rem = [];
-    g.tp = 1;
-    later(t, g, extra + 1500, () => endTurn(t));
-  }
-}
-function endTurn(t) {
-  const g = t.G;
-  if (g.over) return;
-  g.turn = 1 - g.turn;
-  g.rem = [];
-  g.dice = [];
-  g.legal = [];
-  g.hist = [];
-  g.ds = TD;
-  g.tl = Date.now();
-  g.tp = 0;
-  const p = g.turn;
-  if (
-    !g.op &&
-    g.S.bar[p] &&
-    [1, 2, 3, 4, 5, 6].every((d) => !gen(g.S, p, d).length)
-  ) {
-    g.tp = 1;
-    later(t, g, 1500, () => endTurn(t));
-  }
-}
-function rollback(g) {
-  if (!g.hist.length) return;
-  g.S = g.hist[0].S;
-  const d = g.dice;
-  g.rem = d[0] == d[1] ? [d[0], d[0], d[0], d[0]] : d.slice();
-  g.legal = seqs(g.S, g.turn, d);
-  g.hist = [];
-}
-// reconnect: unconfirmed moves of the current turn are rolled back, both sides resync
-function resync(t) {
-  const g = t.G;
-  rollback(g);
-  if (g.op) g.open = [0, 0];
-  g.tl = Date.now();
-  const st = { S: g.S, turn: g.turn, op: g.op, dice: g.dice, tm: g.tm, ds: g.ds };
-  [t.h, t.g].forEach((x) => send(x, { t: "go", seat: seat(t, x), st, tid: t.id, names: [t.hn, t.gn] }));
-}
-
-const RM = ["rq", "ra", "rn"];
-function handle(tok, m) {
-  const p = P[tok];
-  if (!p) return;
-  const t = T[p.tid];
-  if (m.t == "create") {
-    if (t) leaveTable(tok);
-    const name =
-      String(m.name || "").replace(/[<>&"'`]/g, "").slice(0, 20) || "Table";
-    T[++tid] = { id: tid, name, h: tok, g: null, G: null, priv: m.priv ? 1 : 0, hn: clean(m.un), gn: "", pw: String(m.pw || "").slice(0, 12) };
-    p.tid = tid;
-    send(tok, { t: "made", tid });
-    return bc();
-  }
-  if (m.t == "join") {
-    const jt = T[m.tid];
-    if (!jt || jt.g) return send(tok, { t: "nojoin" });
-    if (jt.h == tok) return;
-    if (jt.pw && String(m.pw || "") !== jt.pw) return send(tok, { t: "badpw" });
-    if (t) leaveTable(tok);
-    jt.g = tok;
-    jt.gn = clean(m.un);
-    p.tid = jt.id;
-    startGame(jt);
-    const names = [jt.hn, jt.gn];
-    send(jt.h, { t: "go", seat: 0, tid: jt.id, names });
-    send(tok, { t: "go", seat: 1, tid: jt.id, names });
-    return bc();
-  }
-  if (m.t == "leave") return t && leaveTable(tok);
-  if (!t || !t.g) return;
-  const g = t.G,
-    s = seat(t, tok),
-    o = other(t, tok);
-  if (RM.includes(m.t) != !!g.over) return;
-  switch (m.t) {
-    case "r": {
-      if (g.op) {
-        // opening: white rolls first, then black; higher die starts with both dice
-        if (s != (g.open[0] ? 1 : 0) || g.open[s]) return;
-        const v = die();
-        g.open[s] = v;
-        both(t, { t: "r", d: [v] });
-        if (g.open[1]) {
-          const [a, b] = g.open;
-          later(t, g, 340 + 1500, () => {
-            if (a == b) return (g.open = [0, 0]);
-            g.op = 0;
-            g.turn = a > b ? 0 : 1;
-            g.dice = [a, b];
-            g.go = 1;
-            g.ds = TD;
-            g.tl = Date.now();
-            g.tp = 0;
-            setup(t, g, 0);
-          });
+    frame(op, payload) { const h = Buffer.from([0x80 | op, payload.length]); this.socket.write(Buffer.concat([h, payload])); }
+    close() { if (this.readyState === 1) { this.readyState = 3; try { this.frame(8, Buffer.alloc(0)); this.socket.end(); } catch { } onClose(this); } }
+    feed(chunk) {
+        this.buf = Buffer.concat([this.buf, chunk]);
+        for (;;) {
+            const b = this.buf; if (b.length < 2) return;
+            const op = b[0] & 15, fin = b[0] & 128, masked = b[1] & 128; let len = b[1] & 127, off = 2;
+            if (len === 126) { if (b.length < 4) return; len = b.readUInt16BE(2); off = 4; }
+            else if (len === 127) { if (b.length < 10) return; len = Number(b.readBigUInt64BE(2)); off = 10; }
+            if (len > MAX) return this.close();
+            if (b.length < off + (masked ? 4 : 0) + len) return;
+            let data = b.subarray(off + (masked ? 4 : 0), off + (masked ? 4 : 0) + len);
+            if (masked) { const m = b.subarray(off, off + 4); data = Buffer.from(data); for (let i = 0; i < data.length; i++) data[i] ^= m[i & 3]; }
+            this.buf = b.subarray(off + (masked ? 4 : 0) + len);
+            if (op === 8) return this.close();
+            if (op === 9) { this.frame(10, data); continue; }
+            if (op === 10) continue;
+            if (op === 1 || op === 2) this.frag = [data]; else if (op === 0 && this.frag) this.frag.push(data); else continue;
+            if (fin) { const msg = Buffer.concat(this.frag).toString('utf8'); this.frag = null; onMessage(this, msg); }
         }
-        return;
-      }
-      if (g.turn != s || g.dice.length || g.tp) return;
-      g.dice = [die(), die()];
-      g.go = 1;
-      both(t, { t: "r", d: g.dice });
-      return setup(t, g, 340);
     }
-    case "m": {
-      if (g.op || g.turn != s || !g.dice.length || g.tp) return;
-      const { r, d } = m;
-      if (
-        !Number.isInteger(r) ||
-        !Number.isInteger(d) ||
-        !g.rem.includes(d) ||
-        !g.legal.some((q) => q[0][0] == r && q[0][1] == d)
-      )
-        return;
-      g.hist.push({ S: g.S, rem: g.rem.slice(), legal: g.legal, c: !!m.c });
-      g.S = ap(g.S, s, r, d);
-      g.rem.splice(g.rem.indexOf(d), 1);
-      g.legal = g.legal
-        .filter((q) => q[0][0] == r && q[0][1] == d)
-        .map((q) => q.slice(1))
-        .filter((q) => q.length);
-      send(o, { t: "m", r, d, c: !!m.c });
-      if (g.S.off[s] == 15) g.over = 1;
-      return;
-    }
-    case "u": {
-      if (g.op || g.turn != s || !g.hist.length) return;
-      let h;
-      do h = g.hist.pop();
-      while (h.c && g.hist.length);
-      g.S = h.S;
-      g.rem = h.rem;
-      g.legal = h.legal;
-      return send(o, { t: "u" });
-    }
-    case "c":
-      if (g.op || g.turn != s || !g.hist.length || g.legal.length) return;
-      send(o, { t: "c" });
-      return endTurn(t);
-    case "sf":
-      g.over = 1;
-      return send(o, { t: "sf" });
-    case "rq":
-    case "rn":
-      return send(o, { t: m.t });
-    case "ra":
-      startGame(t);
-      return send(o, { t: "ra" });
-  }
 }
 
-// connection lost: keep the game for GRACE ms so the player can come back
-function dropped(tok) {
-  const p = P[tok];
-  if (!p) return;
-  const t = T[p.tid];
-  if (!t) return void delete P[tok];
-  const live = t.g && t.G && !t.G.over;
-  p.off = setTimeout(
-    () => {
-      if (T[t.id] === t) {
-        const o = other(t, tok),
-          lv = t.g && t.G && !t.G.over;
-        if (lv) t.G.over = 1;
-        o && send(o, lv ? { t: "dc" } : { t: "left" });
-        removeTable(t);
-      }
-      delete P[tok];
-    },
-    live ? GRACE : 15000,
-  );
+server.on('upgrade', (req, socket) => {
+    const key = req.headers['sec-websocket-key'];
+    if (!key) return socket.destroy();
+    socket.write('HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ' +
+        crypto.createHash('sha1').update(key + GUID).digest('base64') + '\r\n\r\n');
+    socket.setNoDelay(true);
+    const ws = new Conn(socket);
+    socket.on('data', d => { try { ws.feed(d); } catch { ws.close(); } });
+    socket.on('close', () => { if (ws.readyState === 1) { ws.readyState = 3; onClose(ws); } });
+    socket.on('error', () => socket.destroy());
+});
+
+function onMessage(ws, raw) {
+    let m; try { m = JSON.parse(raw); } catch { return; }
+    if (!m || typeof m !== 'object') return;
+    const room = ws.room && rooms.get(ws.room);
+
+    if (m.t === 'watch') {
+        if (ws.room) return;
+        watchers.add(ws); send(ws, { t: 'rooms', rooms: roomsList() });
+    } else if (m.t === 'create' && !ws.room) {
+        let code; do { code = String(Math.floor(1000 + Math.random() * 9000)); } while (rooms.has(code));
+        ws.id = nextId++; ws.room = code;
+        rooms.set(code, { members: [{ id: ws.id, name: cleanName(m.name), ws }] });
+        send(ws, { t: 'created', code }); broadcastLobby(rooms.get(code)); broadcastRooms();
+    } else if (m.t === 'join' && !ws.room) {
+        const r = rooms.get(String(m.code));
+        if (!r) return send(ws, { t: 'error', msg: 'ოთახი ვერ მოიძებნა' });
+        if (r.started) return send(ws, { t: 'error', msg: 'თამაში უკვე დაწყებულია' });
+        if (r.members.length >= 4) return send(ws, { t: 'error', msg: 'ოთახი სავსეა' });
+        ws.id = nextId++; ws.room = String(m.code);
+        r.members.push({ id: ws.id, name: cleanName(m.name), ws });
+        send(ws, { t: 'joined', code: ws.room }); broadcastLobby(r); broadcastRooms();
+    } else if (m.t === 'toHost' && room) {
+        send(room.members[0].ws, { t: 'fromGuest', id: ws.id, data: m.data });
+    } else if (m.t === 'toClient' && room && room.members[0].ws === ws) {
+        if (!room.started) { room.started = true; broadcastRooms(); }
+        const g = room.members.find(x => x.id === m.to);
+        if (g) send(g.ws, { t: 'fromHost', data: m.data });
+    }
 }
 
-http
-  .createServer((q, r) => {
-    const u = new URL(q.url, "http://x");
-    // CORS: allows the CrazyGames-hosted game to talk to this server
-    r.setHeader("Access-Control-Allow-Origin", "*");
-    if (q.method == "OPTIONS") {
-      r.writeHead(204, {
-        "Access-Control-Allow-Methods": "GET, POST",
-        "Access-Control-Allow-Headers": "Content-Type",
-      });
-      return r.end();
-    }
-    if (u.pathname == "/ev") {
-      const tok = u.searchParams.get("tok") || "";
-      if (!/^[\w-]{8,64}$/.test(tok)) {
-        r.writeHead(400);
-        return r.end();
-      }
-      r.writeHead(200, {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        Connection: "keep-alive",
-        "X-Accel-Buffering": "no",
-      });
-      let p = P[tok];
-      if (p) {
-        clearTimeout(p.off);
-        p.res && p.res.end();
-      } else p = P[tok] = { tok, tid: 0 };
-      p.res = r;
-      const t = T[p.tid],
-        ing = !!(t && t.g && t.G && !t.G.over);
-      send(tok, { t: "hi", ing });
-      bc();
-      if (ing) resync(t);
-      else if (t && !t.g) send(tok, { t: "made", tid: t.id });
-      const hb = setInterval(() => r.write(": hb\n\n"), 20000);
-      q.on("close", () => {
-        clearInterval(hb);
-        if (p.res === r) {
-          p.res = null;
-          dropped(tok);
-        }
-      });
-    } else if (u.pathname == "/api" && q.method == "POST") {
-      let b = "";
-      q.on("data", (d) => {
-        b += d;
-        if (b.length > 2000) q.destroy();
-      }).on("end", () => {
-        try {
-          const m = JSON.parse(b);
-          if (typeof m.id == "string") handle(m.id, m);
-        } catch (e) {
-          console.error(e);
-        }
-        r.writeHead(204);
-        r.end();
-      });
-    } else if (u.pathname == "/health") {
-      r.writeHead(200);
-      r.end("ok");
+function onClose(ws) {
+    watchers.delete(ws);
+    const r = ws.room && rooms.get(ws.room);
+    if (!r) return;
+    if (r.members[0].ws === ws) {
+        r.members.slice(1).forEach(x => { send(x.ws, { t: 'closed' }); x.ws.room = null; });
+        rooms.delete(ws.room);
+        broadcastRooms();
     } else {
-      let rel;
-      try {
-        rel = decodeURIComponent(u.pathname);
-      } catch (e) {
-        r.writeHead(400);
-        return r.end();
-      }
-      const f = path.join(__dirname, rel == "/" ? "index.html" : rel),
-        ct = MIME[path.extname(f).toLowerCase()];
-      if (!ct || !f.startsWith(__dirname + path.sep)) {
-        r.writeHead(404);
-        return r.end();
-      }
-      fs.readFile(f, (e, d) => {
-        if (e) {
-          r.writeHead(404);
-          return r.end();
-        }
-        const h = {
-          "Content-Type": ct,
-          "Accept-Ranges": "bytes",
-          "Cache-Control": ct.startsWith("text/html")
-            ? "no-cache"
-            : "public, max-age=3600",
-        };
-        // Range support so looping background music works
-        const rg = /^bytes=(\d*)-(\d*)$/.exec(q.headers.range || "");
-        if (rg && (rg[1] || rg[2])) {
-          const s = rg[1] ? +rg[1] : Math.max(0, d.length - +rg[2]);
-          const en =
-            rg[1] && rg[2] ? Math.min(+rg[2], d.length - 1) : d.length - 1;
-          if (s > en) {
-            r.writeHead(416, { "Content-Range": "bytes */" + d.length });
-            return r.end();
-          }
-          h["Content-Range"] = `bytes ${s}-${en}/${d.length}`;
-          h["Content-Length"] = en - s + 1;
-          r.writeHead(206, h);
-          return r.end(d.subarray(s, en + 1));
-        }
-        r.writeHead(200, h);
-        r.end(d);
-      });
+        r.members = r.members.filter(x => x.ws !== ws);
+        send(r.members[0].ws, { t: 'left', id: ws.id });
+        broadcastLobby(r);
+        broadcastRooms();
     }
-  })
-  .listen(PORT, "0.0.0.0", () =>
-    console.log("Backgammon server ready: http://localhost:" + PORT),
-  );
-process.on("uncaughtException", (e) => console.error(e));
+}
+
+server.listen(PORT, '0.0.0.0', () => console.log(`http://localhost:${PORT}  (LAN: გახსენით ამ კომპიუტერის IP:${PORT})`));
